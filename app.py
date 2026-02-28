@@ -96,44 +96,27 @@ with st.sidebar:
     st.markdown(
         """
         <style>
-        .sidebar-link {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            padding: 0.55rem 0.75rem;
-            margin-bottom: 0.35rem;
-            border-radius: 8px;
-            color: #333;
-            text-decoration: none;
-            font-size: 0.95rem;
-            font-weight: 500;
-            transition: background 0.2s, color 0.2s;
-        }
-        .sidebar-link:hover {
-            background: rgba(229, 96, 32, 0.12);
-            color: #e56020;
-        }
-        .sidebar-link svg {
-            flex-shrink: 0;
-            width: 18px;
-            height: 18px;
-        }
         .sidebar-section-title {
             font-size: 0.7rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.08em;
             color: #999;
-            margin: 0.9rem 0 0.4rem 0.75rem;
+            margin: 0.9rem 0 0.4rem 0;
+        }
+        .sidebar-about {
+            font-size: 0.9rem;
+            line-height: 1.55;
+            color: #555;
         }
         </style>
 
-        <div class="sidebar-section-title">Links</div>
-
-        <a class="sidebar-link" href="https://alexsmith.finance" target="_blank">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            alexsmith.finance
-        </a>
+        <div class="sidebar-section-title">About</div>
+        <p class="sidebar-about">
+            Built by a finance leader and data nerd who turns messy datasets
+            into clear decisions — whether it's a $200M budget model or an
+            NBA shot chart.
+        </p>
         """,
         unsafe_allow_html=True,
     )
