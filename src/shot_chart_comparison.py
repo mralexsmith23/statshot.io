@@ -199,10 +199,30 @@ def _player_headshot(pid: int) -> np.ndarray | None:
     return _fetch_image(f"https://cdn.nba.com/headshots/nba/latest/260x190/{pid}.png")
 
 
+def _trim_transparent(img: np.ndarray, pad: int = 4) -> np.ndarray:
+    """Crop to the bounding box of non-transparent pixels so all logos
+    fill their display area equally regardless of source padding."""
+    alpha = img[:, :, 3]
+    rows = np.any(alpha > 0, axis=1)
+    cols = np.any(alpha > 0, axis=0)
+    if not rows.any():
+        return img
+    r0, r1 = np.where(rows)[0][[0, -1]]
+    c0, c1 = np.where(cols)[0][[0, -1]]
+    r0 = max(r0 - pad, 0)
+    r1 = min(r1 + pad, img.shape[0] - 1)
+    c0 = max(c0 - pad, 0)
+    c1 = min(c1 + pad, img.shape[1] - 1)
+    return img[r0:r1 + 1, c0:c1 + 1]
+
+
 def _team_logo(abbr: str) -> np.ndarray | None:
-    return _fetch_image(
+    img = _fetch_image(
         f"https://a.espncdn.com/i/teamlogos/nba/500/{abbr.lower()}.png"
     )
+    if img is not None:
+        img = _trim_transparent(img)
+    return img
 
 
 # ---------------------------------------------------------------------------
