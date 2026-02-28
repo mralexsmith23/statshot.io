@@ -39,14 +39,17 @@ st.set_page_config(
 # ---------------------------------------------------------------------------
 # Open Graph meta tags — social sharing previews
 # ---------------------------------------------------------------------------
+_OG_IMAGE = "https://raw.githubusercontent.com/mralexsmith23/statshot.io/main/assets/og-preview.png"
 st.markdown(
-    """<meta property="og:title" content="StatShot — NBA Head-to-Head Shot Charts" />
+    f"""<meta property="og:title" content="StatShot — NBA Head-to-Head Shot Charts" />
 <meta property="og:description" content="Compare any two NBA players' shooting — any era, any season. Interactive FG% heatmaps with team colors." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://statshot.io" />
-<meta name="twitter:card" content="summary" />
+<meta property="og:image" content="{_OG_IMAGE}" />
+<meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="StatShot — NBA Head-to-Head Shot Charts" />
-<meta name="twitter:description" content="Compare any two NBA players' shooting — any era, any season." />""",
+<meta name="twitter:description" content="Compare any two NBA players' shooting — any era, any season." />
+<meta name="twitter:image" content="{_OG_IMAGE}" />""",
     unsafe_allow_html=True,
 )
 

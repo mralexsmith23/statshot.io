@@ -8,13 +8,13 @@ Run from project root:
 """
 from __future__ import annotations
 
+import pathlib
 import sys
 
 sys.path.insert(0, ".")
 
 import matplotlib.pyplot as plt
 from src.shot_chart_comparison import build_comparison, TEAM_COLORS
-from src.config import OUTPUTS_DIR
 
 
 def main() -> None:
@@ -36,7 +36,9 @@ def main() -> None:
         transform=fig.transFigure,
     )
 
-    out_path = OUTPUTS_DIR / "og-preview.png"
+    out_dir = pathlib.Path(__file__).resolve().parent.parent / "assets"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "og-preview.png"
     fig.savefig(out_path, dpi=150, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"OG preview image saved: {out_path}")
