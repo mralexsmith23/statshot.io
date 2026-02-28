@@ -1,6 +1,7 @@
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile.prod"
+noCache = true
 
 [deploy]
 healthcheckPath = "/_stcore/health"
