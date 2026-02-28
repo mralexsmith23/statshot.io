@@ -347,48 +347,7 @@ with tab_compare:
     color_a_hex = colors_a[cmp_color_a_idx]
     color_b_hex = colors_b[cmp_color_b_idx]
 
-    PRESETS = [
-        ("Jordan vs LeBron", "Michael Jordan", "1997-98", "LeBron James", "2012-13"),
-        ("Curry vs Dame", "Stephen Curry", "2015-16", "Damian Lillard", "2019-20"),
-        ("Kobe vs KD", "Kobe Bryant", "2005-06", "Kevin Durant", "2013-14"),
-        ("Shaq vs Giannis", "Shaquille O'Neal", "1999-00", "Giannis Antetokounmpo", "2019-20"),
-        ("Booker vs Tatum", "Devin Booker", "2024-25", "Jayson Tatum", "2024-25"),
-    ]
-
-    st.markdown(
-        '<p style="font-size:0.9rem; color:#888; margin-bottom:0.25rem;">Try a classic matchup:</p>',
-        unsafe_allow_html=True,
-    )
-    preset_cols = st.columns(len(PRESETS))
-    for i, (label, pa, sa, pb, sb) in enumerate(PRESETS):
-        with preset_cols[i]:
-            if st.button(label, key=f"preset_{i}", use_container_width=True):
-                st.session_state["preset_a"] = pa
-                st.session_state["preset_sa"] = sa
-                st.session_state["preset_b"] = pb
-                st.session_state["preset_sb"] = sb
-                st.session_state["run_preset"] = True
-                st.rerun()
-
-    run_now = st.button("Generate Comparison", type="primary", key="btn_cmp")
-
-    use_preset = st.session_state.pop("run_preset", False)
-    if use_preset:
-        cmp_player_a = st.session_state.pop("preset_a", cmp_player_a)
-        cmp_season_a = st.session_state.pop("preset_sa", cmp_season_a)
-        cmp_player_b = st.session_state.pop("preset_b", cmp_player_b)
-        cmp_season_b = st.session_state.pop("preset_sb", cmp_season_b)
-        pid_a = resolve_player_id(cmp_player_a) if cmp_player_a else None
-        pid_b = resolve_player_id(cmp_player_b) if cmp_player_b else None
-        abbr_a = fetch_team_for_season(pid_a, cmp_season_a) if pid_a else None
-        abbr_b = fetch_team_for_season(pid_b, cmp_season_b) if pid_b else None
-        colors_a = TEAM_COLORS.get(abbr_a, FALLBACK_A) if abbr_a else FALLBACK_A
-        colors_b = TEAM_COLORS.get(abbr_b, FALLBACK_B) if abbr_b else FALLBACK_B
-        color_a_hex = colors_a[0]
-        color_b_hex = colors_b[0]
-        run_now = True
-
-    if run_now:
+    if st.button("Generate Comparison", type="primary", key="btn_cmp"):
         if cmp_player_a == cmp_player_b and cmp_season_a == cmp_season_b:
             st.error("Pick two different players or different seasons.")
         else:
@@ -417,8 +376,6 @@ with tab_compare:
                 buf = BytesIO()
                 fig.savefig(buf, format="png", dpi=180, facecolor="white")
                 buf.seek(0)
-                st.pyplot(fig, use_container_width=True)
-                plt.close(fig)
 
                 share_cols = st.columns([1, 1, 1, 3])
                 with share_cols[0]:
@@ -446,6 +403,9 @@ with tab_compare:
                         'font-size:0.875rem; margin-top:3px;">🔗 Copy Link</button>',
                         unsafe_allow_html=True,
                     )
+
+                st.pyplot(fig, use_container_width=True)
+                plt.close(fig)
             except ValueError as e:
                 st.warning(str(e))
             except Exception as e:

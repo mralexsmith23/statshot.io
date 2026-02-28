@@ -292,9 +292,17 @@ def _zone_splits(df: pd.DataFrame) -> dict:
 # ---------------------------------------------------------------------------
 def _generate_headline(name_a: str, name_b: str,
                        diff: np.ndarray, volume: np.ndarray,
-                       stats_a: dict, stats_b: dict) -> tuple[str, str]:
-    last_a = name_a.split()[-1]
-    last_b = name_b.split()[-1]
+                       stats_a: dict, stats_b: dict,
+                       season_a: str = "", season_b: str = "") -> tuple[str, str]:
+    same_player = name_a.strip().lower() == name_b.strip().lower()
+    if same_player:
+        short_a = f"'{season_a.split('-')[0][-2:]} {name_a.split()[-1]}"
+        short_b = f"'{season_b.split('-')[0][-2:]} {name_b.split()[-1]}"
+    else:
+        short_a = name_a.split()[-1]
+        short_b = name_b.split()[-1]
+    last_a = short_a
+    last_b = short_b
     res = diff.shape[0]
 
     xc = np.linspace(-GRID_W, GRID_W, res)
@@ -419,7 +427,8 @@ def build_comparison(
 
     stats_a, stats_b = _zone_splits(df_a), _zone_splits(df_b)
     diff, volume = _diff_surface(df_a, df_b)
-    headline, subtitle = _generate_headline(player_a, player_b, diff, volume, stats_a, stats_b)
+    headline, subtitle = _generate_headline(player_a, player_b, diff, volume, stats_a, stats_b,
+                                               season_a=szn_a, season_b=szn_b)
 
     diff_c = _crop_to_court(diff)
     vol_c = _crop_to_court(volume)
@@ -540,9 +549,16 @@ def build_comparison(
         spine.set_edgecolor("#cccccc")
         spine.set_linewidth(0.5)
 
-    fig.text(0.17, leg_y + 0.008, f"← {player_a.split()[-1]} better",
+    same_player = player_a.strip().lower() == player_b.strip().lower()
+    if same_player:
+        leg_label_a = f"'{szn_a.split('-')[0][-2:]} better"
+        leg_label_b = f"'{szn_b.split('-')[0][-2:]} better"
+    else:
+        leg_label_a = f"{player_a.split()[-1]} better"
+        leg_label_b = f"{player_b.split()[-1]} better"
+    fig.text(0.17, leg_y + 0.008, f"← {leg_label_a}",
              ha="right", va="center", color=color_a, **_fp(12, "semibold"))
-    fig.text(0.83, leg_y + 0.008, f"{player_b.split()[-1]} better →",
+    fig.text(0.83, leg_y + 0.008, f"{leg_label_b} →",
              ha="left", va="center", color=color_b, **_fp(12, "semibold"))
 
     pct_cap = int(CAP * 100)
