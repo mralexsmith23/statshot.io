@@ -54,6 +54,13 @@ LEGENDS: list[tuple[str, list[str]]] = [
 ]
 
 
+def _p(msg: str) -> None:
+    try:
+        print(msg, flush=True)
+    except UnicodeEncodeError:
+        print(msg.encode("ascii", errors="replace").decode(), flush=True)
+
+
 def _resolve_id(name: str) -> int | None:
     matches = players.find_players_by_full_name(name)
     return matches[0]["id"] if matches else None
@@ -66,12 +73,12 @@ def prefetch_legends() -> None:
     errors = 0
     idx = 0
 
-    print(f"Pre-fetching {total_combos} player-season combos for {len(LEGENDS)} legends...")
+    _p(f"Pre-fetching {total_combos} player-season combos for {len(LEGENDS)} legends...")
 
     for name, seasons in LEGENDS:
         pid = _resolve_id(name)
         if pid is None:
-            print(f"  WARNING: could not resolve '{name}', skipping")
+            _p(f"  WARNING: could not resolve '{name}', skipping")
             errors += len(seasons)
             idx += len(seasons)
             continue
@@ -80,19 +87,19 @@ def prefetch_legends() -> None:
             idx += 1
             if is_cached(pid, szn):
                 cached += 1
-                print(f"  [{idx}/{total_combos}] {name} {szn} — already cached")
+                _p(f"  [{idx}/{total_combos}] {name} {szn} -- already cached")
                 continue
 
             try:
                 df = load_shots(pid, szn, allow_api=True)
                 fetched += 1
-                print(f"  [{idx}/{total_combos}] {name} {szn} — fetched {len(df)} shots")
+                _p(f"  [{idx}/{total_combos}] {name} {szn} -- fetched {len(df)} shots")
             except Exception as exc:
                 errors += 1
-                print(f"  [{idx}/{total_combos}] {name} {szn} — ERROR: {exc}")
+                _p(f"  [{idx}/{total_combos}] {name} {szn} -- ERROR: {exc}")
                 time.sleep(2)
 
-    print(f"\nDone. Cached: {cached}  Fetched: {fetched}  Errors: {errors}")
+    _p(f"\nDone. Cached: {cached}  Fetched: {fetched}  Errors: {errors}")
 
 
 if __name__ == "__main__":

@@ -459,15 +459,13 @@ def build_comparison(
         ax_logo_a.imshow(img_logo_a)
         ax_logo_a.axis("off")
 
-    cross_era = szn_a != szn_b
-
     tx_a = 0.230
-    name_label_a = f"{player_a}  ({szn_a})" if cross_era else player_a
-    fig.text(tx_a, 0.912, name_label_a, ha="left", va="center", color=color_a, **_fp(20, "bold"))
-    fig.text(tx_a, 0.890,
+    fig.text(tx_a, 0.916, player_a, ha="left", va="center", color=color_a, **_fp(20, "bold"))
+    fig.text(tx_a, 0.897, szn_a, ha="left", va="center", color="#777777", **_fp(13, "medium"))
+    fig.text(tx_a, 0.878,
              f"{stats_a['fga']:,} FGA  ·  {stats_a['fg_pct']:.1f}% FG",
              ha="left", va="center", color="#555555", **_fp(12, "medium"))
-    fig.text(tx_a, 0.870,
+    fig.text(tx_a, 0.860,
              f"Paint {stats_a['paint_pct']:.0f}%  ·  Mid {stats_a['mid_pct']:.0f}%  ·  3PT {stats_a['three_pct']:.0f}%",
              ha="left", va="center", color="#999999", **_fp(10, "regular"))
 
@@ -483,18 +481,18 @@ def build_comparison(
         ax_logo_b.imshow(img_logo_b)
         ax_logo_b.axis("off")
 
-    tx_b = 0.98
-    name_label_b = f"{player_b}  ({szn_b})" if cross_era else player_b
-    fig.text(tx_b, 0.912, name_label_b, ha="right", va="center", color=color_b, **_fp(20, "bold"))
-    fig.text(tx_b, 0.890,
+    tx_b = 0.72
+    fig.text(tx_b, 0.916, player_b, ha="left", va="center", color=color_b, **_fp(20, "bold"))
+    fig.text(tx_b, 0.897, szn_b, ha="left", va="center", color="#777777", **_fp(13, "medium"))
+    fig.text(tx_b, 0.878,
              f"{stats_b['fga']:,} FGA  ·  {stats_b['fg_pct']:.1f}% FG",
-             ha="right", va="center", color="#555555", **_fp(12, "medium"))
-    fig.text(tx_b, 0.870,
+             ha="left", va="center", color="#555555", **_fp(12, "medium"))
+    fig.text(tx_b, 0.860,
              f"Paint {stats_b['paint_pct']:.0f}%  ·  Mid {stats_b['mid_pct']:.0f}%  ·  3PT {stats_b['three_pct']:.0f}%",
-             ha="right", va="center", color="#999999", **_fp(10, "regular"))
+             ha="left", va="center", color="#999999", **_fp(10, "regular"))
 
     # --- Court + heatmap ---
-    court_rect = [0.04, 0.120, 0.92, 0.708]
+    court_rect = [0.04, 0.100, 0.92, 0.745]
 
     ax_bg = fig.add_axes(court_rect)
     ax_bg.set_facecolor("#e8e5e1")
@@ -546,6 +544,7 @@ def build_comparison(
     for xp, label in ticks:
         fig.text(xp, 0.072, label, ha="center", va="center", color="#999999", **_fp(10, "regular"))
 
+    cross_era = szn_a != szn_b
     season_label = f"{szn_a} vs {szn_b}" if cross_era else szn_a
     fig.text(0.50, 0.050, f"{season_label} Regular Season  ·  Source: NBA Stats API",
              ha="center", va="center", color="#bbbbbb", **_fp(9, "regular"))

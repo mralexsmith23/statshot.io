@@ -22,7 +22,6 @@ from nba_api.stats.endpoints import (
 )
 from src.cache import load_shots
 from src.shot_chart_comparison import TEAM_COLORS, FALLBACK_A, FALLBACK_B
-from src.config import FG_COMPARISON_DIR
 
 # ---------------------------------------------------------------------------
 # Page config
@@ -330,9 +329,6 @@ with tab_compare:
                 file_name = f"{name_a}_{season_a_safe}_vs_{name_b}_{season_b_safe}.png"
                 buf = BytesIO()
                 fig.savefig(buf, format="png", dpi=180, facecolor="white")
-                buf.seek(0)
-                out_path = FG_COMPARISON_DIR / file_name
-                out_path.write_bytes(buf.getvalue())
                 buf.seek(0)
                 st.pyplot(fig, use_container_width=True)
                 plt.close(fig)
