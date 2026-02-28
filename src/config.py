@@ -35,6 +35,13 @@ SHOT_REQUIRED_COLUMNS: frozenset[str] = frozenset({
 })
 
 # ---------------------------------------------------------------------------
+# Contact form (Formspree — hides your email from the public)
+# ---------------------------------------------------------------------------
+# Sign up free at https://formspree.io, create a form pointed at your email,
+# and paste the form ID here (the "f/xxxxx" part of your endpoint URL).
+FORMSPREE_FORM_ID: str = "xdkojkwg"
+
+# ---------------------------------------------------------------------------
 # Google Analytics
 # ---------------------------------------------------------------------------
 # Set to your GA4 Measurement ID (e.g. "G-XXXXXXXXXX") to enable tracking.

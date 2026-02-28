@@ -23,7 +23,7 @@ from nba_api.stats.endpoints import (
     leagueleaders,
 )
 from src.cache import load_shots
-from src.config import SHOT_CACHE_DIR, GA_TRACKING_ID
+from src.config import SHOT_CACHE_DIR, GA_TRACKING_ID, FORMSPREE_FORM_ID
 from src.shot_chart_comparison import TEAM_COLORS, FALLBACK_A, FALLBACK_B
 
 # ---------------------------------------------------------------------------
@@ -134,26 +134,37 @@ with st.sidebar:
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             alexsmith.finance
         </a>
-
-        <a class="sidebar-link" href="https://statshot.io" target="_blank">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            statshot.io
-        </a>
-
-        <a class="sidebar-link" href="https://www.linkedin.com/in/alexwesleysmith/" target="_blank">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-            LinkedIn
-        </a>
-
-        <div class="sidebar-section-title">Contact</div>
-
-        <a class="sidebar-link" href="mailto:mralexsmith@gmail.com">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
-            mralexsmith@gmail.com
-        </a>
         """,
         unsafe_allow_html=True,
     )
+    st.divider()
+    st.markdown(
+        '<div class="sidebar-section-title">Contact</div>',
+        unsafe_allow_html=True,
+    )
+    with st.form("sidebar_contact", clear_on_submit=True):
+        contact_name = st.text_input("Name", placeholder="Your name")
+        contact_email = st.text_input("Email", placeholder="you@example.com")
+        contact_msg = st.text_area("Message", placeholder="What's on your mind?", height=100)
+        submitted = st.form_submit_button("Send")
+        if submitted:
+            if not contact_name or not contact_email or not contact_msg:
+                st.warning("Please fill in all fields.")
+            else:
+                import requests as _req
+                resp = _req.post(
+                    f"https://formspree.io/f/{FORMSPREE_FORM_ID}",
+                    data={
+                        "name": contact_name,
+                        "email": contact_email,
+                        "message": contact_msg,
+                    },
+                    headers={"Accept": "application/json"},
+                )
+                if resp.ok:
+                    st.success("Message sent — thanks!")
+                else:
+                    st.error("Something went wrong. Try again later.")
     st.divider()
     st.caption("Data: NBA Stats API  ·  Built with Python & Streamlit")
 
