@@ -148,6 +148,7 @@ def fetch_shots_live(player_id: int, season: str) -> pd.DataFrame:
                 player_id=int(player_id),
                 season_nullable=season,
                 context_measure_simple="FGA",
+                timeout=60,
             )
             return shot.get_data_frames()[0]
         except (RequestException, ConnectionError, TimeoutError):

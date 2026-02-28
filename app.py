@@ -136,13 +136,21 @@ SHOT_DATA_FIRST_SEASON = 1996
 def fetch_player_seasons(player_id: int) -> list[str]:
     """Return list of seasons (e.g. ['2024-25', '2023-24', ...]) a player has data for,
     filtered to seasons where NBA shot-location data exists (1996-97+)."""
-    time.sleep(0.6)
-    career = playercareerstats.PlayerCareerStats(player_id=player_id)
-    df = career.get_data_frames()[0]
-    if df.empty:
-        return []
-    all_seasons = sorted(df["SEASON_ID"].unique(), reverse=True)
-    return [s for s in all_seasons if int(s[:4]) >= SHOT_DATA_FIRST_SEASON]
+    for attempt in range(3):
+        try:
+            time.sleep(0.6 + attempt * 1.5)
+            career = playercareerstats.PlayerCareerStats(
+                player_id=player_id, timeout=60,
+            )
+            df = career.get_data_frames()[0]
+            if df.empty:
+                return []
+            all_seasons = sorted(df["SEASON_ID"].unique(), reverse=True)
+            return [s for s in all_seasons if int(s[:4]) >= SHOT_DATA_FIRST_SEASON]
+        except Exception:
+            if attempt == 2:
+                raise
+    return []
 
 
 @st.cache_data(show_spinner="Fetching shot data...", ttl=600)
@@ -152,19 +160,34 @@ def fetch_shot_chart(player_id: int, season: str) -> pd.DataFrame:
 
 @st.cache_data(show_spinner="Fetching game logs...", ttl=600)
 def fetch_player_game_logs(player_id: int, season: str) -> pd.DataFrame:
-    time.sleep(0.6)
-    logs = playergamelogs.PlayerGameLogs(
-        player_id_nullable=player_id,
-        season_nullable=season,
-    )
-    return logs.get_data_frames()[0]
+    for attempt in range(3):
+        try:
+            time.sleep(0.6 + attempt * 1.5)
+            logs = playergamelogs.PlayerGameLogs(
+                player_id_nullable=player_id,
+                season_nullable=season,
+                timeout=60,
+            )
+            return logs.get_data_frames()[0]
+        except Exception:
+            if attempt == 2:
+                raise
+    return pd.DataFrame()
 
 
 @st.cache_data(show_spinner="Fetching career stats...", ttl=600)
 def fetch_career_stats(player_id: int) -> pd.DataFrame:
-    time.sleep(0.6)
-    career = playercareerstats.PlayerCareerStats(player_id=player_id)
-    return career.get_data_frames()[0]
+    for attempt in range(3):
+        try:
+            time.sleep(0.6 + attempt * 1.5)
+            career = playercareerstats.PlayerCareerStats(
+                player_id=player_id, timeout=60,
+            )
+            return career.get_data_frames()[0]
+        except Exception:
+            if attempt == 2:
+                raise
+    return pd.DataFrame()
 
 
 @st.cache_data(show_spinner=False, ttl=3600)
@@ -181,23 +204,43 @@ def fetch_team_for_season(player_id: int, season: str) -> str | None:
 
 @st.cache_data(show_spinner="Fetching team stats...", ttl=600)
 def fetch_league_team_stats(season: str) -> pd.DataFrame:
-    time.sleep(0.6)
-    ts = leaguedashteamstats.LeagueDashTeamStats(season=season)
-    return ts.get_data_frames()[0]
+    for attempt in range(3):
+        try:
+            time.sleep(0.6 + attempt * 1.5)
+            ts = leaguedashteamstats.LeagueDashTeamStats(season=season, timeout=60)
+            return ts.get_data_frames()[0]
+        except Exception:
+            if attempt == 2:
+                raise
+    return pd.DataFrame()
 
 
 @st.cache_data(show_spinner="Fetching standings...", ttl=600)
 def fetch_standings(season: str) -> pd.DataFrame:
-    time.sleep(0.6)
-    s = leaguestandingsv3.LeagueStandingsV3(season=season)
-    return s.get_data_frames()[0]
+    for attempt in range(3):
+        try:
+            time.sleep(0.6 + attempt * 1.5)
+            s = leaguestandingsv3.LeagueStandingsV3(season=season, timeout=60)
+            return s.get_data_frames()[0]
+        except Exception:
+            if attempt == 2:
+                raise
+    return pd.DataFrame()
 
 
 @st.cache_data(show_spinner="Fetching league leaders...", ttl=600)
 def fetch_league_leaders(season: str, stat_category: str = "PTS") -> pd.DataFrame:
-    time.sleep(0.6)
-    ll = leagueleaders.LeagueLeaders(season=season, stat_category_abbreviation=stat_category)
-    return ll.get_data_frames()[0]
+    for attempt in range(3):
+        try:
+            time.sleep(0.6 + attempt * 1.5)
+            ll = leagueleaders.LeagueLeaders(
+                season=season, stat_category_abbreviation=stat_category, timeout=60,
+            )
+            return ll.get_data_frames()[0]
+        except Exception:
+            if attempt == 2:
+                raise
+    return pd.DataFrame()
 
 
 # ---------------------------------------------------------------------------
@@ -425,7 +468,13 @@ with tab_compare:
             except ValueError as e:
                 st.warning(str(e))
             except Exception as e:
-                st.error(f"Error: {e}")
+                if "timed out" in str(e).lower() or "timeout" in str(e).lower():
+                    st.error(
+                        "The NBA Stats API is slow right now — please try again in a moment. "
+                        "(This usually resolves on retry.)"
+                    )
+                else:
+                    st.error(f"Error: {e}")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # HIDDEN TABS — set SHOW_ALL_TABS = True when ready to launch
