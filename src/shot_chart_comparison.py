@@ -482,25 +482,25 @@ def build_comparison(
 
     fig.text(0.50, 0.878, "vs", ha="center", va="center", color="#cccccc", **_fp(18, "medium"))
 
-    # --- Player B header ---
+    # --- Player B header (mirrored: text right-aligned, images on right) ---
     if img_head_b is not None:
-        ax_img_b = fig.add_axes([0.535, 0.835, 0.12, 0.100])
+        ax_img_b = fig.add_axes([0.835, 0.835, 0.12, 0.100])
         ax_img_b.imshow(img_head_b)
         ax_img_b.axis("off")
     if img_logo_b is not None:
-        ax_logo_b = fig.add_axes([0.655, 0.840, 0.060, 0.060])
+        ax_logo_b = fig.add_axes([0.775, 0.840, 0.060, 0.060])
         ax_logo_b.imshow(img_logo_b)
         ax_logo_b.axis("off")
 
-    tx_b = 0.72
-    fig.text(tx_b, 0.908, player_b, ha="left", va="center", color=color_b, **_fp(20, "bold"))
-    fig.text(tx_b, 0.886, szn_b, ha="left", va="center", color="#777777", **_fp(13, "medium"))
+    tx_b = 0.770
+    fig.text(tx_b, 0.908, player_b, ha="right", va="center", color=color_b, **_fp(20, "bold"))
+    fig.text(tx_b, 0.886, szn_b, ha="right", va="center", color="#777777", **_fp(13, "medium"))
     fig.text(tx_b, 0.865,
              f"{stats_b['fga']:,} FGA  ·  {stats_b['fg_pct']:.1f}% FG",
-             ha="left", va="center", color="#555555", **_fp(12, "medium"))
+             ha="right", va="center", color="#555555", **_fp(12, "medium"))
     fig.text(tx_b, 0.845,
              f"Paint {stats_b['paint_pct']:.0f}%  ·  Mid {stats_b['mid_pct']:.0f}%  ·  3PT {stats_b['three_pct']:.0f}%",
-             ha="left", va="center", color="#999999", **_fp(10, "regular"))
+             ha="right", va="center", color="#999999", **_fp(10, "regular"))
 
     # --- Court + heatmap ---
     # Axes sized to match the court data aspect ratio so set_aspect("equal")
@@ -559,7 +559,7 @@ def build_comparison(
     fig.text(0.17, leg_y + 0.008, f"← {leg_label_a}",
              ha="right", va="center", color=color_a, **_fp(12, "semibold"))
     fig.text(0.83, leg_y + 0.008, f"{leg_label_b} →",
-             ha="left", va="center", color=color_b, **_fp(12, "semibold"))
+             ha="right", va="center", color=color_b, **_fp(12, "semibold"))
 
     pct_cap = int(CAP * 100)
     ticks = [
