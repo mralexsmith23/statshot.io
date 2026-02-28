@@ -8,6 +8,7 @@ import unicodedata
 from io import BytesIO
 from urllib.parse import quote
 import streamlit as st
+import streamlit.components.v1 as components
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
@@ -52,18 +53,36 @@ st.markdown(
 )
 
 # ---------------------------------------------------------------------------
-# Google Analytics (GA4) — only injected when GA_TRACKING_ID is set
+# Google Analytics (GA4) — uses components.html() so the <script> executes
 # ---------------------------------------------------------------------------
 if GA_TRACKING_ID:
-    st.markdown(
-        f"""<script async src="https://www.googletagmanager.com/gtag/js?id={GA_TRACKING_ID}"></script>
+    components.html(
+        f"""
+<script async src="https://www.googletagmanager.com/gtag/js?id={GA_TRACKING_ID}"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){{dataLayer.push(arguments);}}
   gtag('js', new Date());
   gtag('config', '{GA_TRACKING_ID}');
-</script>""",
-        unsafe_allow_html=True,
+
+  // Bubble the tag into the parent Streamlit document as well
+  if (window.parent && window.parent !== window) {{
+    var s = window.parent.document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id={GA_TRACKING_ID}';
+    window.parent.document.head.appendChild(s);
+    var s2 = window.parent.document.createElement('script');
+    s2.textContent = `
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){{dataLayer.push(arguments);}}
+      gtag('js', new Date());
+      gtag('config', '{GA_TRACKING_ID}');
+    `;
+    window.parent.document.head.appendChild(s2);
+  }}
+</script>
+""",
+        height=0,
     )
 
 # ---------------------------------------------------------------------------
