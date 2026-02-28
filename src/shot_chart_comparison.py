@@ -558,7 +558,7 @@ def build_comparison(
     # --- Legend bar ---
     # court bottom = court_top - court_h ≈ 0.120
     leg_y = court_top - court_h - 0.030
-    ax_leg = fig.add_axes([0.18, leg_y, 0.64, 0.015])
+    ax_leg = fig.add_axes([0.22, leg_y, 0.56, 0.015])
     gradient = np.linspace(0, 1, 256).reshape(1, -1)
     ax_leg.imshow(gradient, aspect="auto", cmap=cmap, extent=(0, 1, 0, 1), origin="lower")
     ax_leg.set_xlim(0, 1)
@@ -576,18 +576,18 @@ def build_comparison(
     else:
         leg_label_a = f"{player_a.split()[-1]} better"
         leg_label_b = f"{player_b.split()[-1]} better"
-    fig.text(0.17, leg_y + 0.008, f"← {leg_label_a}",
+    fig.text(0.21, leg_y + 0.008, f"← {leg_label_a}",
              ha="right", va="center", color=color_a, **_fp(12, "semibold"))
-    fig.text(0.83, leg_y + 0.008, f"{leg_label_b} →",
-             ha="right", va="center", color=color_b, **_fp(12, "semibold"))
+    fig.text(0.79, leg_y + 0.008, f"{leg_label_b} →",
+             ha="left", va="center", color=color_b, **_fp(12, "semibold"))
 
     pct_cap = int(CAP * 100)
     ticks = [
-        (0.18, f"+{pct_cap}%"),
-        (0.34, f"+{pct_cap // 2}%"),
+        (0.22, f"+{pct_cap}%"),
+        (0.36, f"+{pct_cap // 2}%"),
         (0.50, "even"),
-        (0.66, f"+{pct_cap // 2}%"),
-        (0.82, f"+{pct_cap}%"),
+        (0.64, f"+{pct_cap // 2}%"),
+        (0.78, f"+{pct_cap}%"),
     ]
     for xp, label in ticks:
         fig.text(xp, leg_y - 0.018, label, ha="center", va="center", color="#999999", **_fp(10, "regular"))
