@@ -281,71 +281,12 @@ with tab_compare:
     col_a, col_szn_a, col_b, col_szn_b = st.columns([3, 2, 3, 2])
     with col_a:
         cmp_player_a = st_searchbox(_search_players, label="Player A (type to search)", default="Stephen Curry", key="cmp_a", clear_on_submit=False)
+    with col_szn_a:
+        cmp_season_a = st.selectbox("Season A", SEASONS, index=0, key="cmp_season_a")
     with col_b:
         cmp_player_b = st_searchbox(_search_players, label="Player B (type to search)", default="Luka Doncic", key="cmp_b", clear_on_submit=False)
-
-    def _career_seasons(player_name: str | None) -> list[str]:
-        if not player_name:
-            return SEASONS
-        try:
-            pid = resolve_player_id(player_name)
-            if pid:
-                szns = fetch_player_seasons(pid)
-                if szns:
-                    return szns
-        except Exception:
-            pass
-        return SEASONS
-
-    seasons_a = _career_seasons(cmp_player_a)
-    seasons_b = _career_seasons(cmp_player_b)
-
-    with col_szn_a:
-        cmp_season_a = st.selectbox("Season A", seasons_a, index=0, key="cmp_season_a")
     with col_szn_b:
-        cmp_season_b = st.selectbox("Season B", seasons_b, index=0, key="cmp_season_b")
-
-    pid_a = resolve_player_id(cmp_player_a) if cmp_player_a else None
-    pid_b = resolve_player_id(cmp_player_b) if cmp_player_b else None
-    abbr_a = fetch_team_for_season(pid_a, cmp_season_a) if pid_a else None
-    abbr_b = fetch_team_for_season(pid_b, cmp_season_b) if pid_b else None
-    colors_a = TEAM_COLORS.get(abbr_a, FALLBACK_A) if abbr_a else FALLBACK_A
-    colors_b = TEAM_COLORS.get(abbr_b, FALLBACK_B) if abbr_b else FALLBACK_B
-
-    col_color_a, col_color_b = st.columns(2)
-    with col_color_a:
-        st.caption("Player A team color")
-        cmp_color_a_idx = st.radio(
-            "Color A",
-            options=[0, 1],
-            format_func=lambda i: ["Primary", "Alternate"][i],
-            key="cmp_color_a",
-            horizontal=True,
-            label_visibility="collapsed",
-        )
-        st.markdown(
-            f'<span style="display:inline-block;width:20px;height:20px;background:{colors_a[0]};border:1px solid #ccc;margin-right:8px;vertical-align:middle;"></span>'
-            f'<span style="display:inline-block;width:20px;height:20px;background:{colors_a[1]};border:1px solid #ccc;vertical-align:middle;"></span>',
-            unsafe_allow_html=True,
-        )
-    with col_color_b:
-        st.caption("Player B team color")
-        cmp_color_b_idx = st.radio(
-            "Color B",
-            options=[0, 1],
-            format_func=lambda i: ["Primary", "Alternate"][i],
-            key="cmp_color_b",
-            horizontal=True,
-            label_visibility="collapsed",
-        )
-        st.markdown(
-            f'<span style="display:inline-block;width:20px;height:20px;background:{colors_b[0]};border:1px solid #ccc;margin-right:8px;vertical-align:middle;"></span>'
-            f'<span style="display:inline-block;width:20px;height:20px;background:{colors_b[1]};border:1px solid #ccc;vertical-align:middle;"></span>',
-            unsafe_allow_html=True,
-        )
-
-    color_a_hex = colors_a[cmp_color_a_idx]
-    color_b_hex = colors_b[cmp_color_b_idx]
+        cmp_season_b = st.selectbox("Season B", SEASONS, index=0, key="cmp_season_b")
 
     if st.button("Generate Comparison", type="primary", key="btn_cmp"):
         if cmp_player_a == cmp_player_b and cmp_season_a == cmp_season_b:
@@ -353,6 +294,15 @@ with tab_compare:
         else:
             try:
                 with st.spinner("Crunching shot data — this may take a few seconds..."):
+                    pid_a = resolve_player_id(cmp_player_a) if cmp_player_a else None
+                    pid_b = resolve_player_id(cmp_player_b) if cmp_player_b else None
+                    abbr_a = fetch_team_for_season(pid_a, cmp_season_a) if pid_a else None
+                    abbr_b = fetch_team_for_season(pid_b, cmp_season_b) if pid_b else None
+                    colors_a = TEAM_COLORS.get(abbr_a, FALLBACK_A) if abbr_a else FALLBACK_A
+                    colors_b = TEAM_COLORS.get(abbr_b, FALLBACK_B) if abbr_b else FALLBACK_B
+                    color_a_hex = colors_a[0]
+                    color_b_hex = colors_b[0]
+
                     from src.shot_chart_comparison import build_comparison
                     fig = build_comparison(
                         cmp_player_a, cmp_player_b,
