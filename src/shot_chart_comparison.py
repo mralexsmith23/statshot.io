@@ -491,16 +491,16 @@ def build_comparison(
         ax_logo_a.axis("off")
 
     tx_a = 0.230
-    fig.text(tx_a, 0.908, player_a, ha="left", va="center", color=color_a, **_fp(20, "bold"))
-    fig.text(tx_a, 0.886, szn_a, ha="left", va="center", color="#777777", **_fp(13, "medium"))
-    fig.text(tx_a, 0.865,
+    fig.text(tx_a, 0.915, player_a, ha="left", va="center", color=color_a, **_fp(20, "bold"))
+    fig.text(tx_a, 0.889, szn_a, ha="left", va="center", color="#777777", **_fp(13, "medium"))
+    fig.text(tx_a, 0.868,
              f"{stats_a['fga']:,} FGA  ·  {stats_a['fg_pct']:.1f}% FG",
              ha="left", va="center", color="#555555", **_fp(12, "medium"))
-    fig.text(tx_a, 0.845,
+    fig.text(tx_a, 0.848,
              f"Paint {stats_a['paint_pct']:.0f}%  ·  Mid {stats_a['mid_pct']:.0f}%  ·  3PT {stats_a['three_pct']:.0f}%",
              ha="left", va="center", color="#999999", **_fp(10, "regular"))
 
-    fig.text(0.50, 0.878, "vs", ha="center", va="center", color="#cccccc", **_fp(18, "medium"))
+    fig.text(0.50, 0.882, "vs", ha="center", va="center", color="#cccccc", **_fp(18, "medium"))
 
     # --- Player B header (mirrored: text right-aligned, images on right) ---
     if img_head_b is not None:
@@ -513,12 +513,12 @@ def build_comparison(
         ax_logo_b.axis("off")
 
     tx_b = 0.770
-    fig.text(tx_b, 0.908, player_b, ha="right", va="center", color=color_b, **_fp(20, "bold"))
-    fig.text(tx_b, 0.886, szn_b, ha="right", va="center", color="#777777", **_fp(13, "medium"))
-    fig.text(tx_b, 0.865,
+    fig.text(tx_b, 0.915, player_b, ha="right", va="center", color=color_b, **_fp(20, "bold"))
+    fig.text(tx_b, 0.889, szn_b, ha="right", va="center", color="#777777", **_fp(13, "medium"))
+    fig.text(tx_b, 0.868,
              f"{stats_b['fga']:,} FGA  ·  {stats_b['fg_pct']:.1f}% FG",
              ha="right", va="center", color="#555555", **_fp(12, "medium"))
-    fig.text(tx_b, 0.845,
+    fig.text(tx_b, 0.848,
              f"Paint {stats_b['paint_pct']:.0f}%  ·  Mid {stats_b['mid_pct']:.0f}%  ·  3PT {stats_b['three_pct']:.0f}%",
              ha="right", va="center", color="#999999", **_fp(10, "regular"))
 
