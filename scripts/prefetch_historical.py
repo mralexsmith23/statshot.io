@@ -1,10 +1,13 @@
 """
-Pre-fetch shot chart data for historical legends across their key seasons.
+Pre-fetch shot chart data for historical legends across ALL their seasons
+(1996-97 onward, when NBA shot-location data became available).
 
 Run from project root:
     python -m scripts.prefetch_historical
 
 Historical data never changes, so this only needs to run once per player-season.
+Uses the career stats API once per player to discover every season, then caches
+all shot data locally.
 """
 from __future__ import annotations
 
@@ -12,45 +15,100 @@ import sys
 import time
 
 from nba_api.stats.static import players
+from nba_api.stats.endpoints import playercareerstats
 
 sys.path.insert(0, ".")
 from src.cache import load_shots, is_cached  # noqa: E402
 
-# (player_name, list_of_seasons_to_cache)
-# Covers the most-requested cross-era comparisons.
-LEGENDS: list[tuple[str, list[str]]] = [
-    ("Michael Jordan",    ["1996-97", "1997-98", "1995-96", "1992-93", "1990-91"]),
-    ("Kobe Bryant",       ["2005-06", "2006-07", "2007-08", "2008-09", "2012-13"]),
-    ("LeBron James",      ["2008-09", "2012-13", "2015-16", "2017-18", "2019-20"]),
-    ("Kevin Durant",      ["2013-14", "2016-17", "2017-18", "2020-21", "2023-24"]),
-    ("Stephen Curry",     ["2015-16", "2016-17", "2017-18", "2020-21", "2023-24"]),
-    ("Shaquille O'Neal",  ["1999-00", "2000-01", "2001-02", "2002-03"]),
-    ("Tim Duncan",        ["2002-03", "2003-04", "2004-05", "2006-07"]),
-    ("Dirk Nowitzki",     ["2005-06", "2006-07", "2010-11", "2013-14"]),
-    ("Dwyane Wade",       ["2005-06", "2008-09", "2010-11", "2012-13"]),
-    ("Allen Iverson",     ["2000-01", "2001-02", "2004-05", "2005-06"]),
-    ("Steve Nash",        ["2004-05", "2005-06", "2006-07", "2009-10"]),
-    ("Ray Allen",         ["2000-01", "2004-05", "2005-06", "2007-08"]),
-    ("Carmelo Anthony",   ["2006-07", "2008-09", "2012-13", "2013-14"]),
-    ("Paul Pierce",       ["2001-02", "2005-06", "2007-08", "2008-09"]),
-    ("Tracy McGrady",     ["2002-03", "2003-04", "2004-05"]),
-    ("Vince Carter",      ["1999-00", "2000-01", "2004-05", "2006-07"]),
-    ("Chris Paul",        ["2007-08", "2008-09", "2014-15", "2020-21"]),
-    ("Russell Westbrook", ["2014-15", "2015-16", "2016-17", "2017-18"]),
-    ("James Harden",      ["2014-15", "2017-18", "2018-19", "2019-20"]),
-    ("Kawhi Leonard",     ["2015-16", "2016-17", "2018-19", "2020-21"]),
-    ("Giannis Antetokounmpo", ["2018-19", "2019-20", "2020-21", "2022-23"]),
-    ("Nikola Jokic",      ["2020-21", "2021-22", "2022-23", "2023-24"]),
-    ("Luka Doncic",       ["2019-20", "2020-21", "2021-22", "2023-24"]),
-    ("Damian Lillard",    ["2015-16", "2017-18", "2019-20", "2020-21"]),
-    ("Devin Booker",      ["2019-20", "2020-21", "2022-23", "2023-24"]),
-    ("Jimmy Butler",      ["2016-17", "2019-20", "2021-22", "2022-23"]),
-    ("Anthony Davis",     ["2017-18", "2019-20", "2020-21", "2023-24"]),
-    ("Kyrie Irving",      ["2014-15", "2016-17", "2020-21", "2023-24"]),
-    ("Paul George",       ["2013-14", "2018-19", "2019-20", "2023-24"]),
-    ("Joel Embiid",       ["2018-19", "2020-21", "2021-22", "2022-23"]),
-    ("Shai Gilgeous-Alexander", ["2021-22", "2022-23", "2023-24", "2024-25"]),
-    ("Jayson Tatum",      ["2020-21", "2021-22", "2022-23", "2023-24"]),
+SHOT_DATA_FIRST_SEASON = 1996
+
+LEGENDS: list[str] = [
+    # 90s / 2000s icons
+    "Michael Jordan",
+    "Kobe Bryant",
+    "Shaquille O'Neal",
+    "Tim Duncan",
+    "Allen Iverson",
+    "Ray Allen",
+    "Vince Carter",
+    "Tracy McGrady",
+    "Steve Nash",
+    "Dirk Nowitzki",
+    "Paul Pierce",
+    "Kevin Garnett",
+    "Reggie Miller",
+    "Gary Payton",
+    "Jason Kidd",
+    "Alonzo Mourning",
+    "Hakeem Olajuwon",
+    "Karl Malone",
+    "John Stockton",
+    "Scottie Pippen",
+    "Patrick Ewing",
+    "David Robinson",
+    "Charles Barkley",
+    "Rasheed Wallace",
+    "Ben Wallace",
+    "Chauncey Billups",
+    "Richard Hamilton",
+    # 2000s / 2010s stars
+    "Dwyane Wade",
+    "Carmelo Anthony",
+    "Chris Paul",
+    "LeBron James",
+    "Kevin Durant",
+    "Stephen Curry",
+    "Russell Westbrook",
+    "James Harden",
+    "Kawhi Leonard",
+    "Paul George",
+    "Kyrie Irving",
+    "Klay Thompson",
+    "Draymond Green",
+    "DeMar DeRozan",
+    "Blake Griffin",
+    "Chris Bosh",
+    "Dwight Howard",
+    "Tony Parker",
+    "Manu Ginobili",
+    "Rajon Rondo",
+    "Derrick Rose",
+    "John Wall",
+    "Bradley Beal",
+    "Kemba Walker",
+    "Kyle Lowry",
+    "Marc Gasol",
+    "Pau Gasol",
+    "Amar'e Stoudemire",
+    "Yao Ming",
+    # 2010s / 2020s stars (non-active or recently retired)
+    "Giannis Antetokounmpo",
+    "Nikola Jokic",
+    "Luka Doncic",
+    "Jayson Tatum",
+    "Joel Embiid",
+    "Damian Lillard",
+    "Devin Booker",
+    "Jimmy Butler",
+    "Anthony Davis",
+    "Shai Gilgeous-Alexander",
+    "Donovan Mitchell",
+    "Trae Young",
+    "Ja Morant",
+    "Zion Williamson",
+    "Anthony Edwards",
+    "LaMelo Ball",
+    "Chet Holmgren",
+    "Victor Wembanyama",
+    "Paolo Banchero",
+    "Tyrese Haliburton",
+    "Tyrese Maxey",
+    "Jalen Brunson",
+    "De'Aaron Fox",
+    "Bam Adebayo",
+    "Domantas Sabonis",
+    "Karl-Anthony Towns",
+    "Rudy Gobert",
 ]
 
 
@@ -66,40 +124,65 @@ def _resolve_id(name: str) -> int | None:
     return matches[0]["id"] if matches else None
 
 
+def _get_all_seasons(player_id: int) -> list[str]:
+    """Fetch all seasons for a player from 1996-97 onward."""
+    try:
+        time.sleep(0.6)
+        career = playercareerstats.PlayerCareerStats(
+            player_id=player_id, timeout=60,
+        )
+        df = career.get_data_frames()[0]
+        if df.empty:
+            return []
+        all_szns = sorted(df["SEASON_ID"].unique(), reverse=True)
+        return [s for s in all_szns if int(s[:4]) >= SHOT_DATA_FIRST_SEASON]
+    except Exception as exc:
+        _p(f"    Could not fetch career seasons: {exc}")
+        return []
+
+
 def prefetch_legends() -> None:
-    total_combos = sum(len(szns) for _, szns in LEGENDS)
     fetched = 0
     cached = 0
     errors = 0
-    idx = 0
+    skipped_empty = 0
+    total_combos = 0
 
-    _p(f"Pre-fetching {total_combos} player-season combos for {len(LEGENDS)} legends...")
+    _p(f"Discovering seasons for {len(LEGENDS)} legends...")
 
-    for name, seasons in LEGENDS:
+    for legend_idx, name in enumerate(LEGENDS, 1):
         pid = _resolve_id(name)
         if pid is None:
-            _p(f"  WARNING: could not resolve '{name}', skipping")
-            errors += len(seasons)
-            idx += len(seasons)
+            _p(f"  [{legend_idx}/{len(LEGENDS)}] WARNING: could not resolve '{name}', skipping")
             continue
 
+        seasons = _get_all_seasons(pid)
+        if not seasons:
+            _p(f"  [{legend_idx}/{len(LEGENDS)}] {name} — no seasons found (pre-1996 player?)")
+            continue
+
+        _p(f"  [{legend_idx}/{len(LEGENDS)}] {name} — {len(seasons)} seasons: {seasons[0]} to {seasons[-1]}")
+
         for szn in seasons:
-            idx += 1
+            total_combos += 1
             if is_cached(pid, szn):
                 cached += 1
-                _p(f"  [{idx}/{total_combos}] {name} {szn} -- already cached")
                 continue
 
             try:
                 df = load_shots(pid, szn, allow_api=True)
-                fetched += 1
-                _p(f"  [{idx}/{total_combos}] {name} {szn} -- fetched {len(df)} shots")
+                if df.empty:
+                    skipped_empty += 1
+                    _p(f"    {name} {szn} — 0 shots (no data)")
+                else:
+                    fetched += 1
+                    _p(f"    {name} {szn} — fetched {len(df)} shots")
             except Exception as exc:
                 errors += 1
-                _p(f"  [{idx}/{total_combos}] {name} {szn} -- ERROR: {exc}")
-                time.sleep(2)
+                _p(f"    {name} {szn} — ERROR: {exc}")
+                time.sleep(3)
 
-    _p(f"\nDone. Cached: {cached}  Fetched: {fetched}  Errors: {errors}")
+    _p(f"\nDone. Total: {total_combos}  Cached: {cached}  Fetched: {fetched}  Empty: {skipped_empty}  Errors: {errors}")
 
 
 if __name__ == "__main__":

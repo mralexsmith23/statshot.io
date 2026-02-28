@@ -22,6 +22,7 @@ from nba_api.stats.endpoints import (
     leagueleaders,
 )
 from src.cache import load_shots
+from src.config import SHOT_CACHE_DIR
 from src.shot_chart_comparison import TEAM_COLORS, FALLBACK_A, FALLBACK_B
 
 # ---------------------------------------------------------------------------
@@ -93,6 +94,57 @@ for t in NBA_TEAMS.values():
         CONFERENCES.setdefault(conf, []).append(t["full_name"])
     if div:
         DIVISIONS.setdefault(div, []).append(t["full_name"])
+
+
+# ---------------------------------------------------------------------------
+# Cache index — built from parquet filenames, zero API calls
+# ---------------------------------------------------------------------------
+TEAM_ID_TO_ABBR = {t["id"]: t["abbreviation"] for t in teams.get_teams()}
+PLAYER_ID_TO_NAME = {p["id"]: p["full_name"] for p in players.get_players()}
+NAME_TO_PLAYER_ID = {p["full_name"]: p["id"] for p in players.get_players()}
+
+
+@st.cache_data(show_spinner=False)
+def _build_cache_index() -> dict[int, list[str]]:
+    """Scan parquet filenames to build player_id → [seasons] mapping."""
+    index: dict[int, list[str]] = {}
+    for f in SHOT_CACHE_DIR.glob("*.parquet"):
+        parts = f.stem.rsplit("_", 1)
+        if len(parts) != 2:
+            continue
+        try:
+            pid = int(parts[0])
+            season = parts[1]
+        except ValueError:
+            continue
+        index.setdefault(pid, []).append(season)
+    for pid in index:
+        index[pid] = sorted(index[pid], reverse=True)
+    return index
+
+
+CACHE_INDEX = _build_cache_index()
+
+
+def _get_cached_seasons(player_name: str) -> list[str] | None:
+    """Return cached seasons for a player, or None if not in cache."""
+    pid = NAME_TO_PLAYER_ID.get(player_name)
+    if pid is None:
+        return None
+    seasons = CACHE_INDEX.get(pid)
+    return seasons if seasons else None
+
+
+def _team_abbr_from_cache(player_id: int, season: str) -> str | None:
+    """Extract team abbreviation from cached shot data — no API call."""
+    try:
+        df = load_shots(player_id, season, allow_api=False)
+        if df.empty or "TEAM_ID" not in df.columns:
+            return None
+        tid = int(df["TEAM_ID"].iloc[0])
+        return TEAM_ID_TO_ABBR.get(tid)
+    except Exception:
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -340,18 +392,20 @@ with tab_compare:
         default_a = url_player_a or "Stephen Curry"
         cmp_player_a = st_searchbox(_search_players, label="Player A (type to search)", default=default_a, key="cmp_a", clear_on_submit=False)
     with col_szn_a:
-        default_sa = url_season_a or SEASONS[0]
-        sa_index = SEASONS.index(default_sa) if default_sa in SEASONS else 0
-        cmp_season_a = st.selectbox("Season A", SEASONS, index=sa_index, key="cmp_season_a")
+        seasons_a = _get_cached_seasons(cmp_player_a) or SEASONS
+        default_sa = url_season_a or seasons_a[0]
+        sa_index = seasons_a.index(default_sa) if default_sa in seasons_a else 0
+        cmp_season_a = st.selectbox("Season A", seasons_a, index=sa_index, key="cmp_season_a")
 
     col_b, col_szn_b = st.columns([3, 2])
     with col_b:
         default_b = url_player_b or "Luka Doncic"
         cmp_player_b = st_searchbox(_search_players, label="Player B (type to search)", default=default_b, key="cmp_b", clear_on_submit=False)
     with col_szn_b:
-        default_sb = url_season_b or SEASONS[0]
-        sb_index = SEASONS.index(default_sb) if default_sb in SEASONS else 0
-        cmp_season_b = st.selectbox("Season B", SEASONS, index=sb_index, key="cmp_season_b")
+        seasons_b = _get_cached_seasons(cmp_player_b) or SEASONS
+        default_sb = url_season_b or seasons_b[0]
+        sb_index = seasons_b.index(default_sb) if default_sb in seasons_b else 0
+        cmp_season_b = st.selectbox("Season B", seasons_b, index=sb_index, key="cmp_season_b")
 
     col_color_a, col_color_b = st.columns(2)
     with col_color_a:
@@ -377,8 +431,12 @@ with tab_compare:
                 with st.spinner("Crunching shot data — this may take a few seconds..."):
                     pid_a = resolve_player_id(cmp_player_a) if cmp_player_a else None
                     pid_b = resolve_player_id(cmp_player_b) if cmp_player_b else None
-                    abbr_a = fetch_team_for_season(pid_a, cmp_season_a) if pid_a else None
-                    abbr_b = fetch_team_for_season(pid_b, cmp_season_b) if pid_b else None
+                    abbr_a = _team_abbr_from_cache(pid_a, cmp_season_a) if pid_a else None
+                    if abbr_a is None and pid_a:
+                        abbr_a = fetch_team_for_season(pid_a, cmp_season_a)
+                    abbr_b = _team_abbr_from_cache(pid_b, cmp_season_b) if pid_b else None
+                    if abbr_b is None and pid_b:
+                        abbr_b = fetch_team_for_season(pid_b, cmp_season_b)
                     colors_a = TEAM_COLORS.get(abbr_a, FALLBACK_A) if abbr_a else FALLBACK_A
                     colors_b = TEAM_COLORS.get(abbr_b, FALLBACK_B) if abbr_b else FALLBACK_B
                     color_idx_a = 0 if color_pref_a == "Primary" else 1
