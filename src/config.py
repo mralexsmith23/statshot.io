@@ -39,7 +39,7 @@ SHOT_REQUIRED_COLUMNS: frozenset[str] = frozenset({
 # ---------------------------------------------------------------------------
 # Sign up free at https://formspree.io, create a form pointed at your email,
 # and paste the form ID here (the "f/xxxxx" part of your endpoint URL).
-FORMSPREE_FORM_ID: str = "xdkojkwg"
+FORMSPREE_FORM_ID: str = "xqedokev"
 
 # ---------------------------------------------------------------------------
 # Google Analytics
