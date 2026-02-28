@@ -500,8 +500,8 @@ def build_comparison(
     # axes width in inches = 0.92 * 11 = 10.12
     # needed height in inches = 10.12 * 0.575 = 5.82
     # in figure coords = 5.82 / 8.2 = 0.710
-    court_h = 0.710
-    court_top = 0.830
+    court_h = 0.695
+    court_top = 0.815
     court_rect = [0.04, court_top - court_h, 0.92, court_h]
 
     ax_bg = fig.add_axes(court_rect)
@@ -556,9 +556,7 @@ def build_comparison(
     for xp, label in ticks:
         fig.text(xp, leg_y - 0.018, label, ha="center", va="center", color="#999999", **_fp(10, "regular"))
 
-    cross_era = szn_a != szn_b
-    season_label = f"{szn_a} vs {szn_b}" if cross_era else szn_a
-    fig.text(0.50, leg_y - 0.038, f"{season_label} Regular Season  ·  Source: NBA Stats API",
+    fig.text(0.50, leg_y - 0.038, "Source: NBA Stats API",
              ha="center", va="center", color="#bbbbbb", **_fp(9, "regular"))
 
     if save:

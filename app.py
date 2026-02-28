@@ -27,15 +27,38 @@ from src.shot_chart_comparison import TEAM_COLORS, FALLBACK_A, FALLBACK_B
 # Page config
 # ---------------------------------------------------------------------------
 st.set_page_config(
-    page_title="NBA Analytics Explorer",
-    page_icon="🏀",
+    page_title="StatShot — NBA Head-to-Head Shot Charts",
+    page_icon="🎯",
     layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# ---------------------------------------------------------------------------
+# Open Graph meta tags — social sharing previews
+# ---------------------------------------------------------------------------
+st.markdown(
+    """<meta property="og:title" content="StatShot — NBA Head-to-Head Shot Charts" />
+<meta property="og:description" content="Compare any two NBA players' shooting — any era, any season. Interactive FG% heatmaps with team colors." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://statshot.io" />
+<meta property="og:image" content="https://statshot.io/og-preview.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="StatShot — NBA Head-to-Head Shot Charts" />
+<meta name="twitter:description" content="Compare any two NBA players' shooting — any era, any season." />
+<meta name="twitter:image" content="https://statshot.io/og-preview.png" />""",
+    unsafe_allow_html=True,
 )
 
 # ---------------------------------------------------------------------------
 # Sidebar — About the Creator
 # ---------------------------------------------------------------------------
 with st.sidebar:
+    st.markdown(
+        '<h3 style="margin-bottom:0.2rem;">🎯 Stat<span style="color:#e56020;">Shot</span></h3>',
+        unsafe_allow_html=True,
+    )
+    st.caption("Compare any two NBA players — any era, any season.")
+    st.divider()
     st.markdown("### About the Creator")
     st.markdown(
         "Built by **Alex Smith** — finance leader, data builder, Suns fan.\n\n"
@@ -44,8 +67,7 @@ with st.sidebar:
     )
     st.markdown(
         "[alexsmith.finance](https://alexsmith.finance)  \n"
-        "[LinkedIn](https://www.linkedin.com/in/alexwesleysmith/)  \n"
-        "[GitHub](https://github.com/mralexsmith23)"
+        "[LinkedIn](https://www.linkedin.com/in/alexwesleysmith/)"
     )
     st.divider()
     st.caption("Data: NBA Stats API  ·  Built with Python & Streamlit")
@@ -222,16 +244,32 @@ def build_shot_chart(df, player_name, season, show_makes, show_misses):
 # ---------------------------------------------------------------------------
 # App header
 # ---------------------------------------------------------------------------
-st.title("NBA Analytics Explorer")
-st.caption("Powered by NBA Stats API  ·  Select a tab below to explore")
+SHOW_ALL_TABS = False
 
-tab_compare, tab_shot, tab_trends, tab_teams, tab_leaders = st.tabs([
-    "Head-to-Head",
-    "Shot Chart",
-    "Player Trends",
-    "Teams & Standings",
-    "League Leaders",
-])
+st.markdown(
+    '<h1 style="margin-bottom:0;">🎯 Stat<span style="color:#e56020;">Shot</span></h1>'
+    '<p style="margin-top:0; font-size:1.15rem; color:#666;">'
+    'NBA head-to-head shot charts — compare any two players, any era.'
+    '</p>',
+    unsafe_allow_html=True,
+)
+st.markdown(
+    '<p style="font-size:0.85rem; color:#999; margin-top:-0.5rem;">'
+    'Powered by NBA Stats API  ·  <a href="https://statshot.io" style="color:#e56020; text-decoration:none;">statshot.io</a>'
+    '</p>',
+    unsafe_allow_html=True,
+)
+
+if SHOW_ALL_TABS:
+    tab_compare, tab_shot, tab_trends, tab_teams, tab_leaders = st.tabs([
+        "Head-to-Head",
+        "Shot Chart",
+        "Player Trends",
+        "Teams & Standings",
+        "League Leaders",
+    ])
+else:
+    tab_compare, = st.tabs(["Head-to-Head"])
 
 # ═══════════════════════════════════════════════════════════════════════════
 # TAB 0 — Head-to-Head Comparison
@@ -309,269 +347,342 @@ with tab_compare:
     color_a_hex = colors_a[cmp_color_a_idx]
     color_b_hex = colors_b[cmp_color_b_idx]
 
-    if st.button("Generate Comparison", type="primary", key="btn_cmp"):
+    PRESETS = [
+        ("Jordan vs LeBron", "Michael Jordan", "1997-98", "LeBron James", "2012-13"),
+        ("Curry vs Dame", "Stephen Curry", "2015-16", "Damian Lillard", "2019-20"),
+        ("Kobe vs KD", "Kobe Bryant", "2005-06", "Kevin Durant", "2013-14"),
+        ("Shaq vs Giannis", "Shaquille O'Neal", "1999-00", "Giannis Antetokounmpo", "2019-20"),
+        ("Booker vs Tatum", "Devin Booker", "2024-25", "Jayson Tatum", "2024-25"),
+    ]
+
+    st.markdown(
+        '<p style="font-size:0.9rem; color:#888; margin-bottom:0.25rem;">Try a classic matchup:</p>',
+        unsafe_allow_html=True,
+    )
+    preset_cols = st.columns(len(PRESETS))
+    for i, (label, pa, sa, pb, sb) in enumerate(PRESETS):
+        with preset_cols[i]:
+            if st.button(label, key=f"preset_{i}", use_container_width=True):
+                st.session_state["preset_a"] = pa
+                st.session_state["preset_sa"] = sa
+                st.session_state["preset_b"] = pb
+                st.session_state["preset_sb"] = sb
+                st.session_state["run_preset"] = True
+                st.rerun()
+
+    run_now = st.button("Generate Comparison", type="primary", key="btn_cmp")
+
+    use_preset = st.session_state.pop("run_preset", False)
+    if use_preset:
+        cmp_player_a = st.session_state.pop("preset_a", cmp_player_a)
+        cmp_season_a = st.session_state.pop("preset_sa", cmp_season_a)
+        cmp_player_b = st.session_state.pop("preset_b", cmp_player_b)
+        cmp_season_b = st.session_state.pop("preset_sb", cmp_season_b)
+        pid_a = resolve_player_id(cmp_player_a) if cmp_player_a else None
+        pid_b = resolve_player_id(cmp_player_b) if cmp_player_b else None
+        abbr_a = fetch_team_for_season(pid_a, cmp_season_a) if pid_a else None
+        abbr_b = fetch_team_for_season(pid_b, cmp_season_b) if pid_b else None
+        colors_a = TEAM_COLORS.get(abbr_a, FALLBACK_A) if abbr_a else FALLBACK_A
+        colors_b = TEAM_COLORS.get(abbr_b, FALLBACK_B) if abbr_b else FALLBACK_B
+        color_a_hex = colors_a[0]
+        color_b_hex = colors_b[0]
+        run_now = True
+
+    if run_now:
         if cmp_player_a == cmp_player_b and cmp_season_a == cmp_season_b:
             st.error("Pick two different players or different seasons.")
         else:
             try:
-                from src.shot_chart_comparison import build_comparison
-                fig = build_comparison(
-                    cmp_player_a, cmp_player_b,
-                    season_a=cmp_season_a, season_b=cmp_season_b,
-                    color_a=color_a_hex, color_b=color_b_hex,
-                    save=False,
-                )
+                with st.spinner("Crunching shot data — this may take a few seconds..."):
+                    from src.shot_chart_comparison import build_comparison
+                    fig = build_comparison(
+                        cmp_player_a, cmp_player_b,
+                        season_a=cmp_season_a, season_b=cmp_season_b,
+                        color_a=color_a_hex, color_b=color_b_hex,
+                        save=False,
+                    )
                 safe = lambda s: re.sub(r"[^\w\-]", "_", (s or "").strip()).strip("_") or "Player"
                 name_a = safe(cmp_player_a)
                 name_b = safe(cmp_player_b)
                 season_a_safe = safe(cmp_season_a)
                 season_b_safe = safe(cmp_season_b)
                 file_name = f"{name_a}_{season_a_safe}_vs_{name_b}_{season_b_safe}.png"
+                fig.text(
+                    0.98, 0.02, "statshot.io",
+                    ha="right", va="bottom",
+                    fontsize=11, color="#e56020", alpha=0.6,
+                    fontweight="bold", fontstyle="italic",
+                    transform=fig.transFigure,
+                )
                 buf = BytesIO()
                 fig.savefig(buf, format="png", dpi=180, facecolor="white")
                 buf.seek(0)
                 st.pyplot(fig, use_container_width=True)
                 plt.close(fig)
-                st.download_button(
-                    "Download as PNG",
-                    data=buf.getvalue(),
-                    file_name=file_name,
-                    mime="image/png",
-                    key="cmp_download",
-                )
+
+                share_cols = st.columns([1, 1, 1, 3])
+                with share_cols[0]:
+                    st.download_button(
+                        "📥 Download PNG",
+                        data=buf.getvalue(),
+                        file_name=file_name,
+                        mime="image/png",
+                        key="cmp_download",
+                    )
+                with share_cols[1]:
+                    tweet_text = (
+                        f"{cmp_player_a} vs {cmp_player_b} — "
+                        f"who shoots better? 🎯\n\n"
+                        f"Built this head-to-head FG% comparison on statshot.io"
+                    )
+                    tweet_url = f"https://twitter.com/intent/tweet?text={tweet_text.replace(' ', '%20').replace('\n', '%0A')}&url=https://statshot.io"
+                    st.link_button("🐦 Tweet This", tweet_url)
+                with share_cols[2]:
+                    st.markdown(
+                        '<button onclick="navigator.clipboard.writeText(\'https://statshot.io\')'
+                        '.then(() => this.textContent=\'✅ Copied!\')" '
+                        'style="background:#e56020; color:white; border:none; '
+                        'padding:0.45rem 1rem; border-radius:0.4rem; cursor:pointer; '
+                        'font-size:0.875rem; margin-top:3px;">🔗 Copy Link</button>',
+                        unsafe_allow_html=True,
+                    )
             except ValueError as e:
                 st.warning(str(e))
             except Exception as e:
                 st.error(f"Error: {e}")
 
 # ═══════════════════════════════════════════════════════════════════════════
-# TAB 1 — Shot Chart
+# HIDDEN TABS — set SHOW_ALL_TABS = True when ready to launch
 # ═══════════════════════════════════════════════════════════════════════════
-with tab_shot:
-    st.subheader("Player Shot Chart")
+if SHOW_ALL_TABS:
 
-    col_p, col_s, col_f1, col_f2 = st.columns([3, 2, 1, 1])
-    with col_p:
-        shot_player = st_searchbox(_search_players, label="Player (type to search)", default="Stephen Curry", key="shot_player", clear_on_submit=False)
-    with col_s:
-        shot_season = st.selectbox("Season", SEASONS, index=0, key="shot_season")
-    with col_f1:
-        shot_makes = st.checkbox("Makes", value=True, key="shot_makes")
-    with col_f2:
-        shot_misses = st.checkbox("Misses", value=True, key="shot_misses")
+    # ═══════════════════════════════════════════════════════════════════════
+    # TAB 1 — Shot Chart
+    # ═══════════════════════════════════════════════════════════════════════
+    with tab_shot:
+        st.subheader("Player Shot Chart")
 
-    if st.button("Generate Shot Chart", type="primary", key="btn_shot"):
-        pid = resolve_player_id(shot_player)
-        if pid is None:
-            st.error(f"Player not found: {shot_player}")
-        else:
-            df = fetch_shot_chart(pid, shot_season)
-            if df.empty:
-                st.warning(f"No shot data for {shot_player} in {shot_season}. Try another season.")
+        col_p, col_s, col_f1, col_f2 = st.columns([3, 2, 1, 1])
+        with col_p:
+            shot_player = st_searchbox(_search_players, label="Player (type to search)", default="Stephen Curry", key="shot_player", clear_on_submit=False)
+        with col_s:
+            shot_season = st.selectbox("Season", SEASONS, index=0, key="shot_season")
+        with col_f1:
+            shot_makes = st.checkbox("Makes", value=True, key="shot_makes")
+        with col_f2:
+            shot_misses = st.checkbox("Misses", value=True, key="shot_misses")
+
+        if st.button("Generate Shot Chart", type="primary", key="btn_shot"):
+            pid = resolve_player_id(shot_player)
+            if pid is None:
+                st.error(f"Player not found: {shot_player}")
             else:
-                headshot_url = f"https://cdn.nba.com/headshots/nba/latest/1040x760/{pid}.png"
-                col_info, col_chart = st.columns([1, 2.5])
-                with col_info:
-                    st.image(headshot_url, width=260)
-                    total = len(df)
-                    made = int(df["SHOT_MADE_FLAG"].sum())
-                    pct = made / total * 100 if total else 0
-                    m1, m2, m3 = st.columns(3)
-                    m1.metric("FGA", f"{total:,}")
-                    m2.metric("FGM", f"{made:,}")
-                    m3.metric("FG%", f"{pct:.1f}%")
+                df = fetch_shot_chart(pid, shot_season)
+                if df.empty:
+                    st.warning(f"No shot data for {shot_player} in {shot_season}. Try another season.")
+                else:
+                    headshot_url = f"https://cdn.nba.com/headshots/nba/latest/1040x760/{pid}.png"
+                    col_info, col_chart = st.columns([1, 2.5])
+                    with col_info:
+                        st.image(headshot_url, width=260)
+                        total = len(df)
+                        made = int(df["SHOT_MADE_FLAG"].sum())
+                        pct = made / total * 100 if total else 0
+                        m1, m2, m3 = st.columns(3)
+                        m1.metric("FGA", f"{total:,}")
+                        m2.metric("FGM", f"{made:,}")
+                        m3.metric("FG%", f"{pct:.1f}%")
 
-                    zones = df.groupby("SHOT_ZONE_BASIC").agg(
-                        FGA=("SHOT_ATTEMPTED_FLAG", "sum"),
-                        FGM=("SHOT_MADE_FLAG", "sum"),
-                    ).reset_index()
-                    zones["FG%"] = (zones["FGM"] / zones["FGA"] * 100).round(1)
-                    zones = zones.sort_values("FGA", ascending=False)
-                    st.dataframe(zones, hide_index=True, use_container_width=True)
+                        zones = df.groupby("SHOT_ZONE_BASIC").agg(
+                            FGA=("SHOT_ATTEMPTED_FLAG", "sum"),
+                            FGM=("SHOT_MADE_FLAG", "sum"),
+                        ).reset_index()
+                        zones["FG%"] = (zones["FGM"] / zones["FGA"] * 100).round(1)
+                        zones = zones.sort_values("FGA", ascending=False)
+                        st.dataframe(zones, hide_index=True, use_container_width=True)
 
-                with col_chart:
-                    fig = build_shot_chart(df, shot_player, shot_season, shot_makes, shot_misses)
-                    st.pyplot(fig, use_container_width=True)
-                    plt.close(fig)
-
-# ═══════════════════════════════════════════════════════════════════════════
-# TAB 2 — Player Trends (game log)
-# ═══════════════════════════════════════════════════════════════════════════
-with tab_trends:
-    st.subheader("Player Season Trends")
-
-    col_pt, col_st, col_stat = st.columns([3, 2, 2])
-    with col_pt:
-        trend_player = st_searchbox(_search_players, label="Player (type to search)", default="LeBron James", key="trend_player", clear_on_submit=False)
-    with col_st:
-        trend_season = st.selectbox("Season", SEASONS, index=0, key="trend_season")
-    with col_stat:
-        trend_stat = st.selectbox("Stat to plot", ["PTS", "AST", "REB", "FG3M", "STL", "BLK", "PLUS_MINUS", "MIN"], key="trend_stat")
-
-    show_career = st.checkbox("Also show career averages by season", key="show_career")
-
-    if st.button("Load Player Trends", type="primary", key="btn_trends"):
-        pid = resolve_player_id(trend_player)
-        if pid is None:
-            st.error(f"Player not found: {trend_player}")
-        else:
-            logs = fetch_player_game_logs(pid, trend_season)
-            if logs.empty:
-                st.warning(f"No game logs for {trend_player} in {trend_season}.")
-            else:
-                logs = logs.sort_values("GAME_DATE")
-                headshot_url = f"https://cdn.nba.com/headshots/nba/latest/1040x760/{pid}.png"
-
-                col_photo, col_summary = st.columns([1, 3])
-                with col_photo:
-                    st.image(headshot_url, width=200)
-                    st.metric("Games played", len(logs))
-                    if trend_stat in logs.columns:
-                        st.metric(f"Avg {trend_stat}", f"{logs[trend_stat].mean():.1f}")
-                        st.metric(f"Max {trend_stat}", f"{logs[trend_stat].max():.0f}")
-
-                with col_summary:
-                    if trend_stat in logs.columns:
-                        fig, ax = plt.subplots(figsize=(12, 4))
-                        vals = logs[trend_stat].values.astype(float)
-                        games = range(1, len(vals) + 1)
-                        ax.bar(games, vals, color="#4a90d9", alpha=0.7, width=0.8)
-                        rolling = pd.Series(vals).rolling(window=5, min_periods=1).mean()
-                        ax.plot(games, rolling, color="#e74c3c", linewidth=2, label="5-game rolling avg")
-                        ax.set_xlabel("Game #")
-                        ax.set_ylabel(trend_stat)
-                        ax.set_title(f"{trend_player} — {trend_stat} per game ({trend_season})", fontweight="bold")
-                        ax.legend()
-                        ax.grid(axis="y", alpha=0.3)
+                    with col_chart:
+                        fig = build_shot_chart(df, shot_player, shot_season, shot_makes, shot_misses)
                         st.pyplot(fig, use_container_width=True)
                         plt.close(fig)
-                    else:
-                        st.warning(f"Column {trend_stat} not found in game logs.")
 
-                if show_career:
-                    career = fetch_career_stats(pid)
-                    if not career.empty and trend_stat in career.columns:
-                        career = career.sort_values("SEASON_ID")
-                        fig2, ax2 = plt.subplots(figsize=(12, 4))
-                        seasons_list = career["SEASON_ID"].astype(str).values
-                        gp = career["GP"].values.astype(float)
-                        totals = career[trend_stat].values.astype(float)
-                        per_game = np.where(gp > 0, totals / gp, 0)
-                        ax2.plot(seasons_list, per_game, marker="o", color="#27ae60", linewidth=2)
-                        ax2.fill_between(seasons_list, per_game, alpha=0.15, color="#27ae60")
-                        ax2.set_xlabel("Season")
-                        ax2.set_ylabel(f"{trend_stat} per game")
-                        ax2.set_title(f"{trend_player} — Career {trend_stat}/game", fontweight="bold")
-                        ax2.grid(axis="y", alpha=0.3)
-                        plt.xticks(rotation=45, ha="right")
-                        st.pyplot(fig2, use_container_width=True)
-                        plt.close(fig2)
+    # ═══════════════════════════════════════════════════════════════════════
+    # TAB 2 — Player Trends (game log)
+    # ═══════════════════════════════════════════════════════════════════════
+    with tab_trends:
+        st.subheader("Player Season Trends")
 
-                st.subheader("Game log")
-                display_cols = ["GAME_DATE", "MATCHUP", "WL", "MIN", "PTS", "AST", "REB", "FG_PCT", "FG3M", "FG3A", "STL", "BLK", "TOV", "PLUS_MINUS"]
-                available = [c for c in display_cols if c in logs.columns]
-                st.dataframe(logs[available].reset_index(drop=True), hide_index=True, use_container_width=True)
+        col_pt, col_st, col_stat = st.columns([3, 2, 2])
+        with col_pt:
+            trend_player = st_searchbox(_search_players, label="Player (type to search)", default="LeBron James", key="trend_player", clear_on_submit=False)
+        with col_st:
+            trend_season = st.selectbox("Season", SEASONS, index=0, key="trend_season")
+        with col_stat:
+            trend_stat = st.selectbox("Stat to plot", ["PTS", "AST", "REB", "FG3M", "STL", "BLK", "PLUS_MINUS", "MIN"], key="trend_stat")
 
-# ═══════════════════════════════════════════════════════════════════════════
-# TAB 3 — Teams & Standings
-# ═══════════════════════════════════════════════════════════════════════════
-with tab_teams:
-    st.subheader("Team Stats & Standings")
-    team_season = st.selectbox("Season", SEASONS, index=0, key="team_season")
+        show_career = st.checkbox("Also show career averages by season", key="show_career")
 
-    view_mode = st.radio("View by", ["All teams", "Conference", "Division"], horizontal=True, key="team_view")
+        if st.button("Load Player Trends", type="primary", key="btn_trends"):
+            pid = resolve_player_id(trend_player)
+            if pid is None:
+                st.error(f"Player not found: {trend_player}")
+            else:
+                logs = fetch_player_game_logs(pid, trend_season)
+                if logs.empty:
+                    st.warning(f"No game logs for {trend_player} in {trend_season}.")
+                else:
+                    logs = logs.sort_values("GAME_DATE")
+                    headshot_url = f"https://cdn.nba.com/headshots/nba/latest/1040x760/{pid}.png"
 
-    if st.button("Load Team Data", type="primary", key="btn_teams"):
-        team_df = fetch_league_team_stats(team_season)
-        standings_df = fetch_standings(team_season)
+                    col_photo, col_summary = st.columns([1, 3])
+                    with col_photo:
+                        st.image(headshot_url, width=200)
+                        st.metric("Games played", len(logs))
+                        if trend_stat in logs.columns:
+                            st.metric(f"Avg {trend_stat}", f"{logs[trend_stat].mean():.1f}")
+                            st.metric(f"Max {trend_stat}", f"{logs[trend_stat].max():.0f}")
 
-        if team_df.empty:
-            st.warning("No team stats returned.")
-        else:
-            # Merge conference/division info from standings if available
-            if not standings_df.empty:
-                conf_map = {}
-                div_map = {}
-                for _, row in standings_df.iterrows():
-                    tid = row.get("TeamID")
-                    conf_map[tid] = row.get("Conference", "")
-                    div_map[tid] = row.get("Division", "")
-                team_df["Conference"] = team_df["TEAM_ID"].map(conf_map)
-                team_df["Division"] = team_df["TEAM_ID"].map(div_map)
+                    with col_summary:
+                        if trend_stat in logs.columns:
+                            fig, ax = plt.subplots(figsize=(12, 4))
+                            vals = logs[trend_stat].values.astype(float)
+                            games = range(1, len(vals) + 1)
+                            ax.bar(games, vals, color="#4a90d9", alpha=0.7, width=0.8)
+                            rolling = pd.Series(vals).rolling(window=5, min_periods=1).mean()
+                            ax.plot(games, rolling, color="#e74c3c", linewidth=2, label="5-game rolling avg")
+                            ax.set_xlabel("Game #")
+                            ax.set_ylabel(trend_stat)
+                            ax.set_title(f"{trend_player} — {trend_stat} per game ({trend_season})", fontweight="bold")
+                            ax.legend()
+                            ax.grid(axis="y", alpha=0.3)
+                            st.pyplot(fig, use_container_width=True)
+                            plt.close(fig)
+                        else:
+                            st.warning(f"Column {trend_stat} not found in game logs.")
 
-            if view_mode == "Conference" and "Conference" in team_df.columns:
-                conf_pick = st.selectbox("Conference", sorted(team_df["Conference"].dropna().unique()), key="conf_pick")
-                team_df = team_df[team_df["Conference"] == conf_pick]
-            elif view_mode == "Division" and "Division" in team_df.columns:
-                div_pick = st.selectbox("Division", sorted(team_df["Division"].dropna().unique()), key="div_pick")
-                team_df = team_df[team_df["Division"] == div_pick]
+                    if show_career:
+                        career = fetch_career_stats(pid)
+                        if not career.empty and trend_stat in career.columns:
+                            career = career.sort_values("SEASON_ID")
+                            fig2, ax2 = plt.subplots(figsize=(12, 4))
+                            seasons_list = career["SEASON_ID"].astype(str).values
+                            gp = career["GP"].values.astype(float)
+                            totals = career[trend_stat].values.astype(float)
+                            per_game = np.where(gp > 0, totals / gp, 0)
+                            ax2.plot(seasons_list, per_game, marker="o", color="#27ae60", linewidth=2)
+                            ax2.fill_between(seasons_list, per_game, alpha=0.15, color="#27ae60")
+                            ax2.set_xlabel("Season")
+                            ax2.set_ylabel(f"{trend_stat} per game")
+                            ax2.set_title(f"{trend_player} — Career {trend_stat}/game", fontweight="bold")
+                            ax2.grid(axis="y", alpha=0.3)
+                            plt.xticks(rotation=45, ha="right")
+                            st.pyplot(fig2, use_container_width=True)
+                            plt.close(fig2)
 
-            team_df = team_df.sort_values("W_PCT", ascending=False)
-            stat_col = st.selectbox("Stat to compare", ["W_PCT", "PTS", "REB", "AST", "FG_PCT", "FG3_PCT", "STL", "BLK", "TOV", "PLUS_MINUS"], key="team_stat")
+                    st.subheader("Game log")
+                    display_cols = ["GAME_DATE", "MATCHUP", "WL", "MIN", "PTS", "AST", "REB", "FG_PCT", "FG3M", "FG3A", "STL", "BLK", "TOV", "PLUS_MINUS"]
+                    available = [c for c in display_cols if c in logs.columns]
+                    st.dataframe(logs[available].reset_index(drop=True), hide_index=True, use_container_width=True)
 
-            fig, ax = plt.subplots(figsize=(14, 6))
-            abbrevs = team_df["TEAM_ABBREVIATION"].values
-            vals = team_df[stat_col].values.astype(float)
-            sort_idx = np.argsort(vals)[::-1]
-            abbrevs, vals = abbrevs[sort_idx], vals[sort_idx]
+    # ═══════════════════════════════════════════════════════════════════════
+    # TAB 3 — Teams & Standings
+    # ═══════════════════════════════════════════════════════════════════════
+    with tab_teams:
+        st.subheader("Team Stats & Standings")
+        team_season = st.selectbox("Season", SEASONS, index=0, key="team_season")
 
-            colors = ["#2ecc71" if v >= np.median(vals) else "#e74c3c" for v in vals]
-            ax.barh(range(len(abbrevs)), vals, color=colors, alpha=0.85)
-            ax.set_yticks(range(len(abbrevs)))
-            ax.set_yticklabels(abbrevs)
-            ax.invert_yaxis()
-            ax.set_xlabel(stat_col)
-            title_suffix = ""
-            if view_mode == "Conference":
-                title_suffix = f" — {conf_pick}"
-            elif view_mode == "Division":
-                title_suffix = f" — {div_pick}"
-            ax.set_title(f"NBA {stat_col} by Team ({team_season}){title_suffix}", fontweight="bold")
-            ax.grid(axis="x", alpha=0.3)
-            st.pyplot(fig, use_container_width=True)
-            plt.close(fig)
+        view_mode = st.radio("View by", ["All teams", "Conference", "Division"], horizontal=True, key="team_view")
 
-            st.subheader("Full team stats")
-            show_cols = ["TEAM_NAME", "W", "L", "W_PCT", "PTS", "REB", "AST", "FG_PCT", "FG3_PCT", "STL", "BLK", "TOV", "PLUS_MINUS"]
-            if "Conference" in team_df.columns:
-                show_cols = ["TEAM_NAME", "Conference", "Division"] + show_cols[1:]
-            available = [c for c in show_cols if c in team_df.columns]
-            st.dataframe(team_df[available].reset_index(drop=True), hide_index=True, use_container_width=True)
+        if st.button("Load Team Data", type="primary", key="btn_teams"):
+            team_df = fetch_league_team_stats(team_season)
+            standings_df = fetch_standings(team_season)
 
-# ═══════════════════════════════════════════════════════════════════════════
-# TAB 4 — League Leaders
-# ═══════════════════════════════════════════════════════════════════════════
-with tab_leaders:
-    st.subheader("League Leaders")
-    col_ls, col_lc, col_ln = st.columns([2, 2, 1])
-    with col_ls:
-        leader_season = st.selectbox("Season", SEASONS, index=0, key="leader_season")
-    with col_lc:
-        leader_cat = st.selectbox("Stat category", ["PTS", "AST", "REB", "STL", "BLK", "FG_PCT", "FG3_PCT", "FT_PCT", "EFF"], key="leader_cat")
-    with col_ln:
-        top_n = st.slider("Top N", 5, 30, 15, key="leader_n")
+            if team_df.empty:
+                st.warning("No team stats returned.")
+            else:
+                if not standings_df.empty:
+                    conf_map = {}
+                    div_map = {}
+                    for _, row in standings_df.iterrows():
+                        tid = row.get("TeamID")
+                        conf_map[tid] = row.get("Conference", "")
+                        div_map[tid] = row.get("Division", "")
+                    team_df["Conference"] = team_df["TEAM_ID"].map(conf_map)
+                    team_df["Division"] = team_df["TEAM_ID"].map(div_map)
 
-    if st.button("Load Leaders", type="primary", key="btn_leaders"):
-        ldf = fetch_league_leaders(leader_season, leader_cat)
-        if ldf.empty:
-            st.warning("No data returned.")
-        else:
-            ldf = ldf.head(top_n)
-            fig, ax = plt.subplots(figsize=(12, max(4, top_n * 0.35)))
-            names = ldf["PLAYER"].values
-            vals = ldf[leader_cat].values.astype(float)
-            colors = plt.cm.YlOrRd(np.linspace(0.3, 0.9, len(vals)))[::-1]
-            ax.barh(range(len(names)), vals, color=colors, alpha=0.9)
-            ax.set_yticks(range(len(names)))
-            ax.set_yticklabels([f"{i+1}. {n}" for i, n in enumerate(names)])
-            ax.invert_yaxis()
-            ax.set_xlabel(leader_cat)
-            ax.set_title(f"NBA {leader_cat} Leaders ({leader_season})", fontweight="bold")
-            ax.grid(axis="x", alpha=0.3)
-            st.pyplot(fig, use_container_width=True)
-            plt.close(fig)
+                if view_mode == "Conference" and "Conference" in team_df.columns:
+                    conf_pick = st.selectbox("Conference", sorted(team_df["Conference"].dropna().unique()), key="conf_pick")
+                    team_df = team_df[team_df["Conference"] == conf_pick]
+                elif view_mode == "Division" and "Division" in team_df.columns:
+                    div_pick = st.selectbox("Division", sorted(team_df["Division"].dropna().unique()), key="div_pick")
+                    team_df = team_df[team_df["Division"] == div_pick]
 
-            st.subheader("Leaderboard")
-            show_cols = ["RANK", "PLAYER", "TEAM", "GP", "MIN", "PTS", "AST", "REB", "STL", "BLK", "FG_PCT", "FG3_PCT", "EFF"]
-            available = [c for c in show_cols if c in ldf.columns]
-            st.dataframe(ldf[available].reset_index(drop=True), hide_index=True, use_container_width=True)
+                team_df = team_df.sort_values("W_PCT", ascending=False)
+                stat_col = st.selectbox("Stat to compare", ["W_PCT", "PTS", "REB", "AST", "FG_PCT", "FG3_PCT", "STL", "BLK", "TOV", "PLUS_MINUS"], key="team_stat")
+
+                fig, ax = plt.subplots(figsize=(14, 6))
+                abbrevs = team_df["TEAM_ABBREVIATION"].values
+                vals = team_df[stat_col].values.astype(float)
+                sort_idx = np.argsort(vals)[::-1]
+                abbrevs, vals = abbrevs[sort_idx], vals[sort_idx]
+
+                colors = ["#2ecc71" if v >= np.median(vals) else "#e74c3c" for v in vals]
+                ax.barh(range(len(abbrevs)), vals, color=colors, alpha=0.85)
+                ax.set_yticks(range(len(abbrevs)))
+                ax.set_yticklabels(abbrevs)
+                ax.invert_yaxis()
+                ax.set_xlabel(stat_col)
+                title_suffix = ""
+                if view_mode == "Conference":
+                    title_suffix = f" — {conf_pick}"
+                elif view_mode == "Division":
+                    title_suffix = f" — {div_pick}"
+                ax.set_title(f"NBA {stat_col} by Team ({team_season}){title_suffix}", fontweight="bold")
+                ax.grid(axis="x", alpha=0.3)
+                st.pyplot(fig, use_container_width=True)
+                plt.close(fig)
+
+                st.subheader("Full team stats")
+                show_cols = ["TEAM_NAME", "W", "L", "W_PCT", "PTS", "REB", "AST", "FG_PCT", "FG3_PCT", "STL", "BLK", "TOV", "PLUS_MINUS"]
+                if "Conference" in team_df.columns:
+                    show_cols = ["TEAM_NAME", "Conference", "Division"] + show_cols[1:]
+                available = [c for c in show_cols if c in team_df.columns]
+                st.dataframe(team_df[available].reset_index(drop=True), hide_index=True, use_container_width=True)
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # TAB 4 — League Leaders
+    # ═══════════════════════════════════════════════════════════════════════
+    with tab_leaders:
+        st.subheader("League Leaders")
+        col_ls, col_lc, col_ln = st.columns([2, 2, 1])
+        with col_ls:
+            leader_season = st.selectbox("Season", SEASONS, index=0, key="leader_season")
+        with col_lc:
+            leader_cat = st.selectbox("Stat category", ["PTS", "AST", "REB", "STL", "BLK", "FG_PCT", "FG3_PCT", "FT_PCT", "EFF"], key="leader_cat")
+        with col_ln:
+            top_n = st.slider("Top N", 5, 30, 15, key="leader_n")
+
+        if st.button("Load Leaders", type="primary", key="btn_leaders"):
+            ldf = fetch_league_leaders(leader_season, leader_cat)
+            if ldf.empty:
+                st.warning("No data returned.")
+            else:
+                ldf = ldf.head(top_n)
+                fig, ax = plt.subplots(figsize=(12, max(4, top_n * 0.35)))
+                names = ldf["PLAYER"].values
+                vals = ldf[leader_cat].values.astype(float)
+                colors = plt.cm.YlOrRd(np.linspace(0.3, 0.9, len(vals)))[::-1]
+                ax.barh(range(len(names)), vals, color=colors, alpha=0.9)
+                ax.set_yticks(range(len(names)))
+                ax.set_yticklabels([f"{i+1}. {n}" for i, n in enumerate(names)])
+                ax.invert_yaxis()
+                ax.set_xlabel(leader_cat)
+                ax.set_title(f"NBA {leader_cat} Leaders ({leader_season})", fontweight="bold")
+                ax.grid(axis="x", alpha=0.3)
+                st.pyplot(fig, use_container_width=True)
+                plt.close(fig)
+
+                st.subheader("Leaderboard")
+                show_cols = ["RANK", "PLAYER", "TEAM", "GP", "MIN", "PTS", "AST", "REB", "STL", "BLK", "FG_PCT", "FG3_PCT", "EFF"]
+                available = [c for c in show_cols if c in ldf.columns]
+                st.dataframe(ldf[available].reset_index(drop=True), hide_index=True, use_container_width=True)
