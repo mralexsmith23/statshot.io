@@ -22,7 +22,7 @@ from nba_api.stats.endpoints import (
     leagueleaders,
 )
 from src.cache import load_shots
-from src.config import SHOT_CACHE_DIR
+from src.config import SHOT_CACHE_DIR, GA_TRACKING_ID
 from src.shot_chart_comparison import TEAM_COLORS, FALLBACK_A, FALLBACK_B
 
 # ---------------------------------------------------------------------------
@@ -50,6 +50,21 @@ st.markdown(
 <meta name="twitter:image" content="https://statshot.io/og-preview.png" />""",
     unsafe_allow_html=True,
 )
+
+# ---------------------------------------------------------------------------
+# Google Analytics (GA4) — only injected when GA_TRACKING_ID is set
+# ---------------------------------------------------------------------------
+if GA_TRACKING_ID:
+    st.markdown(
+        f"""<script async src="https://www.googletagmanager.com/gtag/js?id={GA_TRACKING_ID}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){{dataLayer.push(arguments);}}
+  gtag('js', new Date());
+  gtag('config', '{GA_TRACKING_ID}');
+</script>""",
+        unsafe_allow_html=True,
+    )
 
 # ---------------------------------------------------------------------------
 # Sidebar — About the Creator
@@ -151,8 +166,18 @@ def _team_abbr_from_cache(player_id: int, season: str) -> str | None:
 # Cached data loaders
 # ---------------------------------------------------------------------------
 @st.cache_data(show_spinner=False)
-def get_all_player_names() -> list[str]:
-    return sorted(p["full_name"] for p in players.get_players())
+def get_cached_player_names() -> list[str]:
+    """Only return players who have at least one season of cached shot data."""
+    names = sorted(
+        PLAYER_ID_TO_NAME[pid]
+        for pid in CACHE_INDEX
+        if pid in PLAYER_ID_TO_NAME
+    )
+    if names:
+        return names
+    return sorted(
+        p["full_name"] for p in players.get_players() if p["is_active"]
+    )
 
 
 _ALL_NAMES: list[str] = []
@@ -166,10 +191,10 @@ def _strip_accents(s: str) -> str:
 
 
 def _search_players(query: str) -> list[str]:
-    """Accent- and case-insensitive search for player names."""
+    """Accent- and case-insensitive search for cached player names."""
     global _ALL_NAMES
     if not _ALL_NAMES:
-        _ALL_NAMES = get_all_player_names()
+        _ALL_NAMES = get_cached_player_names()
     if not query:
         return _ALL_NAMES[:20]
     q = _strip_accents(query).lower()
@@ -427,6 +452,9 @@ with tab_compare:
         if cmp_player_a == cmp_player_b and cmp_season_a == cmp_season_b:
             st.error("Pick two different players or different seasons.")
         else:
+            fig = None
+            abbr_a = abbr_b = None
+            color_a_hex = color_b_hex = None
             try:
                 with st.spinner("Crunching shot data — this may take a few seconds..."):
                     pid_a = resolve_player_id(cmp_player_a) if cmp_player_a else None
@@ -451,6 +479,18 @@ with tab_compare:
                         color_a=color_a_hex, color_b=color_b_hex,
                         save=False,
                     )
+            except ValueError as e:
+                st.warning(str(e))
+            except Exception as e:
+                if "timed out" in str(e).lower() or "timeout" in str(e).lower():
+                    st.error(
+                        "The NBA Stats API is slow right now — please try again in a moment. "
+                        "(This usually resolves on retry.)"
+                    )
+                else:
+                    st.error(f"Error: {e}")
+
+            if fig is not None:
                 safe = lambda s: re.sub(r"[^\w\-]", "_", (s or "").strip()).strip("_") or "Player"
                 name_a = safe(cmp_player_a)
                 name_b = safe(cmp_player_b)
@@ -467,6 +507,24 @@ with tab_compare:
                 buf = BytesIO()
                 fig.savefig(buf, format="png", dpi=180, facecolor="white")
                 buf.seek(0)
+
+                team_name_a = ABBR_TO_NAME.get(abbr_a, abbr_a or "Unknown")
+                team_name_b = ABBR_TO_NAME.get(abbr_b, abbr_b or "Unknown")
+                st.markdown(
+                    f'<p style="font-size:0.85rem; color:#888; margin:0.5rem 0 0.25rem;">'
+                    f'<span style="display:inline-block;width:14px;height:14px;background:{color_a_hex};'
+                    f'border:1px solid #ccc;border-radius:3px;vertical-align:middle;margin-right:4px;"></span>'
+                    f'{team_name_a} ({abbr_a or "?"}) — {color_pref_a}'
+                    f'&nbsp;&nbsp;vs&nbsp;&nbsp;'
+                    f'<span style="display:inline-block;width:14px;height:14px;background:{color_b_hex};'
+                    f'border:1px solid #ccc;border-radius:3px;vertical-align:middle;margin-right:4px;"></span>'
+                    f'{team_name_b} ({abbr_b or "?"}) — {color_pref_b}'
+                    f'</p>',
+                    unsafe_allow_html=True,
+                )
+
+                st.pyplot(fig, use_container_width=True)
+                plt.close(fig)
 
                 ca_param = "alt" if color_pref_a == "Alternate" else "pri"
                 cb_param = "alt" if color_pref_b == "Alternate" else "pri"
@@ -505,34 +563,6 @@ with tab_compare:
                         f"&title={quote(share_text + ' | StatShot')}"
                     )
                     st.link_button("🏀 Reddit", reddit_url)
-
-                team_name_a = ABBR_TO_NAME.get(abbr_a, abbr_a or "Unknown")
-                team_name_b = ABBR_TO_NAME.get(abbr_b, abbr_b or "Unknown")
-                st.markdown(
-                    f'<p style="font-size:0.85rem; color:#888; margin:0.5rem 0 0.25rem;">'
-                    f'<span style="display:inline-block;width:14px;height:14px;background:{color_a_hex};'
-                    f'border:1px solid #ccc;border-radius:3px;vertical-align:middle;margin-right:4px;"></span>'
-                    f'{team_name_a} ({abbr_a or "?"}) — {color_pref_a}'
-                    f'&nbsp;&nbsp;vs&nbsp;&nbsp;'
-                    f'<span style="display:inline-block;width:14px;height:14px;background:{color_b_hex};'
-                    f'border:1px solid #ccc;border-radius:3px;vertical-align:middle;margin-right:4px;"></span>'
-                    f'{team_name_b} ({abbr_b or "?"}) — {color_pref_b}'
-                    f'</p>',
-                    unsafe_allow_html=True,
-                )
-
-                st.pyplot(fig, use_container_width=True)
-                plt.close(fig)
-            except ValueError as e:
-                st.warning(str(e))
-            except Exception as e:
-                if "timed out" in str(e).lower() or "timeout" in str(e).lower():
-                    st.error(
-                        "The NBA Stats API is slow right now — please try again in a moment. "
-                        "(This usually resolves on retry.)"
-                    )
-                else:
-                    st.error(f"Error: {e}")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # HIDDEN TABS — set SHOW_ALL_TABS = True when ready to launch

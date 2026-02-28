@@ -33,3 +33,10 @@ SHOT_KEEP_COLUMNS: list[str] = [
 SHOT_REQUIRED_COLUMNS: frozenset[str] = frozenset({
     "LOC_X", "LOC_Y", "SHOT_MADE_FLAG",
 })
+
+# ---------------------------------------------------------------------------
+# Google Analytics
+# ---------------------------------------------------------------------------
+# Set to your GA4 Measurement ID (e.g. "G-XXXXXXXXXX") to enable tracking.
+# Leave empty to disable.
+GA_TRACKING_ID: str = ""
