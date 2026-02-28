@@ -380,6 +380,40 @@ with tab_compare:
                 st.error(f"Error: {e}")
 
 # ═══════════════════════════════════════════════════════════════════════════
+# Get in Touch
+# ═══════════════════════════════════════════════════════════════════════════
+st.divider()
+st.markdown(
+    '<h2 style="text-align:center; margin-bottom:0.2rem;">Let\'s Work Together</h2>'
+    '<p style="text-align:center; color:#888; font-size:1rem; margin-top:0;">'
+    'I\'m always open to discussing new opportunities — finance leadership, data projects, or just talking hoops.'
+    '</p>',
+    unsafe_allow_html=True,
+)
+
+col_form_pad_l, col_form, col_form_pad_r = st.columns([1, 2, 1])
+with col_form:
+    with st.form("contact_form", clear_on_submit=True):
+        contact_name = st.text_input("Name")
+        contact_email = st.text_input("Email")
+        contact_msg = st.text_area("Message", height=120)
+        submitted = st.form_submit_button("Send message", type="primary", use_container_width=True)
+        if submitted:
+            if not contact_name or not contact_email or not contact_msg:
+                st.warning("Please fill out all fields.")
+            else:
+                st.success("Thanks for reaching out! I'll get back to you soon.")
+
+    st.markdown(
+        '<p style="text-align:center; font-size:0.9rem; margin-top:0.75rem;">'
+        '<a href="https://alexsmith.finance" style="color:#e56020; text-decoration:none;">alexsmith.finance</a>'
+        '&nbsp;&nbsp;·&nbsp;&nbsp;'
+        '<a href="https://www.linkedin.com/in/alexwesleysmith/" style="color:#e56020; text-decoration:none;">LinkedIn</a>'
+        '</p>',
+        unsafe_allow_html=True,
+    )
+
+# ═══════════════════════════════════════════════════════════════════════════
 # HIDDEN TABS — set SHOW_ALL_TABS = True when ready to launch
 # ═══════════════════════════════════════════════════════════════════════════
 if SHOW_ALL_TABS:
