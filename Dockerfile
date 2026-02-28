@@ -11,6 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+ARG CACHEBUST=1
 EXPOSE 8501
 
 CMD sh -c "streamlit run app.py \
