@@ -39,4 +39,4 @@ SHOT_REQUIRED_COLUMNS: frozenset[str] = frozenset({
 # ---------------------------------------------------------------------------
 # Set to your GA4 Measurement ID (e.g. "G-XXXXXXXXXX") to enable tracking.
 # Leave empty to disable.
-GA_TRACKING_ID: str = ""
+GA_TRACKING_ID: str = "G-M56R0CSJPQ"
