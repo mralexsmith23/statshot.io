@@ -81,6 +81,7 @@ SCALE = 0.1
 SEASONS = [f"{y}-{str(y + 1)[-2:]}" for y in range(2025, 1995, -1)]
 
 NBA_TEAMS = {t["id"]: t for t in teams.get_teams()}
+ABBR_TO_NAME = {t["abbreviation"]: t["full_name"] for t in NBA_TEAMS.values()}
 CONFERENCES = {"East": [], "West": []}
 DIVISIONS = {}
 for t in NBA_TEAMS.values():
@@ -278,11 +279,13 @@ with tab_compare:
     st.subheader("Head-to-Head FG% Comparison")
     st.caption("Smoothed heatmap colored by the player who shoots better in each zone, using their team colors")
 
-    col_a, col_szn_a, col_b, col_szn_b = st.columns([3, 2, 3, 2])
+    col_a, col_szn_a = st.columns([3, 2])
     with col_a:
         cmp_player_a = st_searchbox(_search_players, label="Player A (type to search)", default="Stephen Curry", key="cmp_a", clear_on_submit=False)
     with col_szn_a:
         cmp_season_a = st.selectbox("Season A", SEASONS, index=0, key="cmp_season_a")
+
+    col_b, col_szn_b = st.columns([3, 2])
     with col_b:
         cmp_player_b = st_searchbox(_search_players, label="Player B (type to search)", default="Luka Doncic", key="cmp_b", clear_on_submit=False)
     with col_szn_b:
@@ -353,6 +356,21 @@ with tab_compare:
                         'font-size:0.875rem; margin-top:3px;">🔗 Copy Link</button>',
                         unsafe_allow_html=True,
                     )
+
+                team_name_a = ABBR_TO_NAME.get(abbr_a, abbr_a or "Unknown")
+                team_name_b = ABBR_TO_NAME.get(abbr_b, abbr_b or "Unknown")
+                st.markdown(
+                    f'<p style="font-size:0.85rem; color:#888; margin:0.5rem 0 0.25rem;">'
+                    f'<span style="display:inline-block;width:14px;height:14px;background:{color_a_hex};'
+                    f'border:1px solid #ccc;border-radius:3px;vertical-align:middle;margin-right:4px;"></span>'
+                    f'{team_name_a}'
+                    f'&nbsp;&nbsp;vs&nbsp;&nbsp;'
+                    f'<span style="display:inline-block;width:14px;height:14px;background:{color_b_hex};'
+                    f'border:1px solid #ccc;border-radius:3px;vertical-align:middle;margin-right:4px;"></span>'
+                    f'{team_name_b}'
+                    f'</p>',
+                    unsafe_allow_html=True,
+                )
 
                 st.pyplot(fig, use_container_width=True)
                 plt.close(fig)
