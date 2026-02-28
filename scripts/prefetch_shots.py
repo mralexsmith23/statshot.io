@@ -19,6 +19,13 @@ sys.path.insert(0, ".")
 from src.cache import load_shots, is_cached  # noqa: E402
 
 
+def _safe_print(msg: str) -> None:
+    try:
+        print(msg, flush=True)
+    except UnicodeEncodeError:
+        print(msg.encode("ascii", errors="replace").decode(), flush=True)
+
+
 def prefetch_active(season: str) -> None:
     active = [p for p in players.get_players() if p["is_active"]]
     total = len(active)
@@ -26,7 +33,7 @@ def prefetch_active(season: str) -> None:
     fetched = 0
     errors = 0
 
-    print(f"Pre-fetching {total} active players for {season}...")
+    _safe_print(f"Pre-fetching {total} active players for {season}...")
 
     for i, p in enumerate(active, 1):
         pid = p["id"]
@@ -34,20 +41,20 @@ def prefetch_active(season: str) -> None:
 
         if is_cached(pid, season):
             cached += 1
-            print(f"  [{i}/{total}] {name} — already cached")
+            _safe_print(f"  [{i}/{total}] {name} -- already cached")
             continue
 
         try:
             df = load_shots(pid, season, allow_api=True)
             rows = len(df)
             fetched += 1
-            print(f"  [{i}/{total}] {name} — fetched {rows} shots")
+            _safe_print(f"  [{i}/{total}] {name} -- fetched {rows} shots")
         except Exception as exc:
             errors += 1
-            print(f"  [{i}/{total}] {name} — ERROR: {exc}")
+            _safe_print(f"  [{i}/{total}] {name} -- ERROR: {exc}")
             time.sleep(2)
 
-    print(f"\nDone. Cached: {cached}  Fetched: {fetched}  Errors: {errors}")
+    _safe_print(f"\nDone. Cached: {cached}  Fetched: {fetched}  Errors: {errors}")
 
 
 if __name__ == "__main__":
