@@ -441,58 +441,58 @@ def build_comparison(
     img_logo_b = _team_logo(abbr_b)
 
     # ===== FIGURE =====
-    fig = plt.figure(figsize=(11, 10), facecolor="white")
+    fig = plt.figure(figsize=(11, 9.5), facecolor="white")
 
     # --- Headline ---
-    fig.text(0.50, 0.980, headline,
+    fig.text(0.50, 0.982, headline,
              ha="center", va="center", color="#1a1a1a", **_fp(24, "bold"))
-    fig.text(0.50, 0.948, subtitle,
+    fig.text(0.50, 0.955, subtitle,
              ha="center", va="center", color="#888888", **_fp(11, "regular"))
 
     # --- Player A header ---
     if img_head_a is not None:
-        ax_img_a = fig.add_axes([0.045, 0.843, 0.12, 0.090])
+        ax_img_a = fig.add_axes([0.045, 0.855, 0.12, 0.090])
         ax_img_a.imshow(img_head_a)
         ax_img_a.axis("off")
     if img_logo_a is not None:
-        ax_logo_a = fig.add_axes([0.165, 0.846, 0.055, 0.055])
+        ax_logo_a = fig.add_axes([0.165, 0.858, 0.055, 0.055])
         ax_logo_a.imshow(img_logo_a)
         ax_logo_a.axis("off")
 
     tx_a = 0.230
-    fig.text(tx_a, 0.916, player_a, ha="left", va="center", color=color_a, **_fp(20, "bold"))
-    fig.text(tx_a, 0.897, szn_a, ha="left", va="center", color="#777777", **_fp(13, "medium"))
-    fig.text(tx_a, 0.878,
+    fig.text(tx_a, 0.920, player_a, ha="left", va="center", color=color_a, **_fp(20, "bold"))
+    fig.text(tx_a, 0.903, szn_a, ha="left", va="center", color="#777777", **_fp(13, "medium"))
+    fig.text(tx_a, 0.886,
              f"{stats_a['fga']:,} FGA  ·  {stats_a['fg_pct']:.1f}% FG",
              ha="left", va="center", color="#555555", **_fp(12, "medium"))
-    fig.text(tx_a, 0.860,
+    fig.text(tx_a, 0.869,
              f"Paint {stats_a['paint_pct']:.0f}%  ·  Mid {stats_a['mid_pct']:.0f}%  ·  3PT {stats_a['three_pct']:.0f}%",
              ha="left", va="center", color="#999999", **_fp(10, "regular"))
 
-    fig.text(0.50, 0.890, "vs", ha="center", va="center", color="#cccccc", **_fp(18, "medium"))
+    fig.text(0.50, 0.895, "vs", ha="center", va="center", color="#cccccc", **_fp(18, "medium"))
 
     # --- Player B header ---
     if img_head_b is not None:
-        ax_img_b = fig.add_axes([0.535, 0.843, 0.12, 0.090])
+        ax_img_b = fig.add_axes([0.535, 0.855, 0.12, 0.090])
         ax_img_b.imshow(img_head_b)
         ax_img_b.axis("off")
     if img_logo_b is not None:
-        ax_logo_b = fig.add_axes([0.655, 0.846, 0.055, 0.055])
+        ax_logo_b = fig.add_axes([0.655, 0.858, 0.055, 0.055])
         ax_logo_b.imshow(img_logo_b)
         ax_logo_b.axis("off")
 
     tx_b = 0.72
-    fig.text(tx_b, 0.916, player_b, ha="left", va="center", color=color_b, **_fp(20, "bold"))
-    fig.text(tx_b, 0.897, szn_b, ha="left", va="center", color="#777777", **_fp(13, "medium"))
-    fig.text(tx_b, 0.878,
+    fig.text(tx_b, 0.920, player_b, ha="left", va="center", color=color_b, **_fp(20, "bold"))
+    fig.text(tx_b, 0.903, szn_b, ha="left", va="center", color="#777777", **_fp(13, "medium"))
+    fig.text(tx_b, 0.886,
              f"{stats_b['fga']:,} FGA  ·  {stats_b['fg_pct']:.1f}% FG",
              ha="left", va="center", color="#555555", **_fp(12, "medium"))
-    fig.text(tx_b, 0.860,
+    fig.text(tx_b, 0.869,
              f"Paint {stats_b['paint_pct']:.0f}%  ·  Mid {stats_b['mid_pct']:.0f}%  ·  3PT {stats_b['three_pct']:.0f}%",
              ha="left", va="center", color="#999999", **_fp(10, "regular"))
 
     # --- Court + heatmap ---
-    court_rect = [0.04, 0.100, 0.92, 0.745]
+    court_rect = [0.04, 0.085, 0.92, 0.765]
 
     ax_bg = fig.add_axes(court_rect)
     ax_bg.set_facecolor("#e8e5e1")
@@ -517,7 +517,7 @@ def build_comparison(
     _draw_court(ax, color="white", lw=1.8, alpha=0.65, zorder=10)
 
     # --- Legend bar ---
-    ax_leg = fig.add_axes([0.18, 0.090, 0.64, 0.015])
+    ax_leg = fig.add_axes([0.18, 0.048, 0.64, 0.015])
     gradient = np.linspace(0, 1, 256).reshape(1, -1)
     ax_leg.imshow(gradient, aspect="auto", cmap=cmap, extent=(0, 1, 0, 1), origin="lower")
     ax_leg.set_xlim(0, 1)
@@ -528,9 +528,9 @@ def build_comparison(
         spine.set_edgecolor("#cccccc")
         spine.set_linewidth(0.5)
 
-    fig.text(0.17, 0.098, f"← {player_a.split()[-1]} better",
+    fig.text(0.17, 0.056, f"← {player_a.split()[-1]} better",
              ha="right", va="center", color=color_a, **_fp(12, "semibold"))
-    fig.text(0.83, 0.098, f"{player_b.split()[-1]} better →",
+    fig.text(0.83, 0.056, f"{player_b.split()[-1]} better →",
              ha="left", va="center", color=color_b, **_fp(12, "semibold"))
 
     pct_cap = int(CAP * 100)
@@ -542,11 +542,11 @@ def build_comparison(
         (0.82, f"+{pct_cap}%"),
     ]
     for xp, label in ticks:
-        fig.text(xp, 0.072, label, ha="center", va="center", color="#999999", **_fp(10, "regular"))
+        fig.text(xp, 0.032, label, ha="center", va="center", color="#999999", **_fp(10, "regular"))
 
     cross_era = szn_a != szn_b
     season_label = f"{szn_a} vs {szn_b}" if cross_era else szn_a
-    fig.text(0.50, 0.050, f"{season_label} Regular Season  ·  Source: NBA Stats API",
+    fig.text(0.50, 0.014, f"{season_label} Regular Season  ·  Source: NBA Stats API",
              ha="center", va="center", color="#bbbbbb", **_fp(9, "regular"))
 
     if save:
