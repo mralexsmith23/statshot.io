@@ -33,7 +33,7 @@ st.set_page_config(
     page_title="StatShot — NBA Head-to-Head Shot Charts",
     page_icon="🎯",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # ---------------------------------------------------------------------------
@@ -44,11 +44,9 @@ st.markdown(
 <meta property="og:description" content="Compare any two NBA players' shooting — any era, any season. Interactive FG% heatmaps with team colors." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://statshot.io" />
-<meta property="og:image" content="https://statshot.io/og-preview.png" />
-<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="StatShot — NBA Head-to-Head Shot Charts" />
-<meta name="twitter:description" content="Compare any two NBA players' shooting — any era, any season." />
-<meta name="twitter:image" content="https://statshot.io/og-preview.png" />""",
+<meta name="twitter:description" content="Compare any two NBA players' shooting — any era, any season." />""",
     unsafe_allow_html=True,
 )
 
@@ -86,7 +84,7 @@ if GA_TRACKING_ID:
     )
 
 # ---------------------------------------------------------------------------
-# Sidebar — About the Creator
+# Sidebar — Links & Contact
 # ---------------------------------------------------------------------------
 with st.sidebar:
     st.markdown(
@@ -95,16 +93,66 @@ with st.sidebar:
     )
     st.caption("Compare any two NBA players — any era, any season.")
     st.divider()
-    st.markdown("### About the Creator")
     st.markdown(
-        "Built by **Alex Smith** — finance leader, data builder, Suns fan.\n\n"
-        "I build tools that turn messy data into clear decisions, "
-        "whether it's a $200M budget model or an NBA shot chart."
-    )
-    st.markdown(
-        "[alexsmith.finance](https://alexsmith.finance)  \n"
-        "[LinkedIn](https://www.linkedin.com/in/alexwesleysmith/)  \n"
-        "[Let's Work Together](mailto:mralexsmith@gmail.com)"
+        """
+        <style>
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.55rem 0.75rem;
+            margin-bottom: 0.35rem;
+            border-radius: 8px;
+            color: #333;
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: background 0.2s, color 0.2s;
+        }
+        .sidebar-link:hover {
+            background: rgba(229, 96, 32, 0.12);
+            color: #e56020;
+        }
+        .sidebar-link svg {
+            flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+        }
+        .sidebar-section-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #999;
+            margin: 0.9rem 0 0.4rem 0.75rem;
+        }
+        </style>
+
+        <div class="sidebar-section-title">Links</div>
+
+        <a class="sidebar-link" href="https://alexsmith.finance" target="_blank">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            alexsmith.finance
+        </a>
+
+        <a class="sidebar-link" href="https://statshot.io" target="_blank">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            statshot.io
+        </a>
+
+        <a class="sidebar-link" href="https://www.linkedin.com/in/alexwesleysmith/" target="_blank">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            LinkedIn
+        </a>
+
+        <div class="sidebar-section-title">Contact</div>
+
+        <a class="sidebar-link" href="mailto:mralexsmith@gmail.com">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
+            mralexsmith@gmail.com
+        </a>
+        """,
+        unsafe_allow_html=True,
     )
     st.divider()
     st.caption("Data: NBA Stats API  ·  Built with Python & Streamlit")

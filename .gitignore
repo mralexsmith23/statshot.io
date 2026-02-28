@@ -31,6 +31,9 @@ assets/fonts/**/extras/otf/
 assets/fonts/**/extras/woff-hinted/
 assets/fonts/**/*.ttc
 
+# Prefetch progress tracking (local-only, resumable)
+data/prefetch_progress.json
+
 # Environment / secrets
 .env
 *.env
