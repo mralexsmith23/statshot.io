@@ -6,6 +6,7 @@ import re
 import time
 import unicodedata
 from io import BytesIO
+from urllib.parse import quote
 import streamlit as st
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -67,7 +68,8 @@ with st.sidebar:
     )
     st.markdown(
         "[alexsmith.finance](https://alexsmith.finance)  \n"
-        "[LinkedIn](https://www.linkedin.com/in/alexwesleysmith/)"
+        "[LinkedIn](https://www.linkedin.com/in/alexwesleysmith/)  \n"
+        "[Let's Work Together](mailto:mralexsmith@gmail.com)"
     )
     st.divider()
     st.caption("Data: NBA Stats API  ·  Built with Python & Streamlit")
@@ -275,23 +277,52 @@ else:
 # ═══════════════════════════════════════════════════════════════════════════
 # TAB 0 — Head-to-Head Comparison
 # ═══════════════════════════════════════════════════════════════════════════
+
+# --- Check for shareable URL params ---
+qp = st.query_params
+url_player_a = qp.get("a", "")
+url_season_a = qp.get("sa", "")
+url_player_b = qp.get("b", "")
+url_season_b = qp.get("sb", "")
+auto_generate = all([url_player_a, url_season_a, url_player_b, url_season_b])
+
 with tab_compare:
     st.subheader("Head-to-Head FG% Comparison")
     st.caption("Smoothed heatmap colored by the player who shoots better in each zone, using their team colors")
 
     col_a, col_szn_a = st.columns([3, 2])
     with col_a:
-        cmp_player_a = st_searchbox(_search_players, label="Player A (type to search)", default="Stephen Curry", key="cmp_a", clear_on_submit=False)
+        default_a = url_player_a or "Stephen Curry"
+        cmp_player_a = st_searchbox(_search_players, label="Player A (type to search)", default=default_a, key="cmp_a", clear_on_submit=False)
     with col_szn_a:
-        cmp_season_a = st.selectbox("Season A", SEASONS, index=0, key="cmp_season_a")
+        default_sa = url_season_a or SEASONS[0]
+        sa_index = SEASONS.index(default_sa) if default_sa in SEASONS else 0
+        cmp_season_a = st.selectbox("Season A", SEASONS, index=sa_index, key="cmp_season_a")
 
     col_b, col_szn_b = st.columns([3, 2])
     with col_b:
-        cmp_player_b = st_searchbox(_search_players, label="Player B (type to search)", default="Luka Doncic", key="cmp_b", clear_on_submit=False)
+        default_b = url_player_b or "Luka Doncic"
+        cmp_player_b = st_searchbox(_search_players, label="Player B (type to search)", default=default_b, key="cmp_b", clear_on_submit=False)
     with col_szn_b:
-        cmp_season_b = st.selectbox("Season B", SEASONS, index=0, key="cmp_season_b")
+        default_sb = url_season_b or SEASONS[0]
+        sb_index = SEASONS.index(default_sb) if default_sb in SEASONS else 0
+        cmp_season_b = st.selectbox("Season B", SEASONS, index=sb_index, key="cmp_season_b")
 
-    if st.button("Generate Comparison", type="primary", key="btn_cmp"):
+    col_color_a, col_color_b = st.columns(2)
+    with col_color_a:
+        color_pref_a = st.radio("Player A color", ["Primary", "Alternate"], index=0, key="color_pref_a", horizontal=True)
+    with col_color_b:
+        color_pref_b = st.radio("Player B color", ["Primary", "Alternate"], index=0, key="color_pref_b", horizontal=True)
+
+    run_now = st.button("Generate Comparison", type="primary", key="btn_cmp") or auto_generate
+
+    if auto_generate:
+        cmp_player_a = url_player_a or cmp_player_a
+        cmp_player_b = url_player_b or cmp_player_b
+        cmp_season_a = url_season_a or cmp_season_a
+        cmp_season_b = url_season_b or cmp_season_b
+
+    if run_now:
         if cmp_player_a == cmp_player_b and cmp_season_a == cmp_season_b:
             st.error("Pick two different players or different seasons.")
         else:
@@ -303,8 +334,10 @@ with tab_compare:
                     abbr_b = fetch_team_for_season(pid_b, cmp_season_b) if pid_b else None
                     colors_a = TEAM_COLORS.get(abbr_a, FALLBACK_A) if abbr_a else FALLBACK_A
                     colors_b = TEAM_COLORS.get(abbr_b, FALLBACK_B) if abbr_b else FALLBACK_B
-                    color_a_hex = colors_a[0]
-                    color_b_hex = colors_b[0]
+                    color_idx_a = 0 if color_pref_a == "Primary" else 1
+                    color_idx_b = 0 if color_pref_b == "Primary" else 1
+                    color_a_hex = colors_a[color_idx_a]
+                    color_b_hex = colors_b[color_idx_b]
 
                     from src.shot_chart_comparison import build_comparison
                     fig = build_comparison(
@@ -330,32 +363,40 @@ with tab_compare:
                 fig.savefig(buf, format="png", dpi=180, facecolor="white")
                 buf.seek(0)
 
-                share_cols = st.columns([1, 1, 1, 3])
+                share_url = (
+                    f"https://statshot.io/?a={quote(cmp_player_a)}"
+                    f"&sa={quote(cmp_season_a)}"
+                    f"&b={quote(cmp_player_b)}"
+                    f"&sb={quote(cmp_season_b)}"
+                )
+                share_text = f"{cmp_player_a} vs {cmp_player_b} — who shoots better?"
+
+                share_cols = st.columns([1, 1, 1, 1, 2])
                 with share_cols[0]:
                     st.download_button(
-                        "📥 Download PNG",
+                        "📥 Download",
                         data=buf.getvalue(),
                         file_name=file_name,
                         mime="image/png",
                         key="cmp_download",
                     )
                 with share_cols[1]:
-                    tweet_text = (
-                        f"{cmp_player_a} vs {cmp_player_b} — "
-                        f"who shoots better? 🎯\n\n"
-                        f"Built this head-to-head FG% comparison on statshot.io"
+                    x_url = (
+                        f"https://twitter.com/intent/tweet"
+                        f"?text={quote(share_text + ' 🎯')}"
+                        f"&url={quote(share_url)}"
                     )
-                    tweet_url = f"https://twitter.com/intent/tweet?text={tweet_text.replace(' ', '%20').replace('\n', '%0A')}&url=https://statshot.io"
-                    st.link_button("🐦 Tweet This", tweet_url)
+                    st.link_button("𝕏 Post to X", x_url)
                 with share_cols[2]:
-                    st.markdown(
-                        '<button onclick="navigator.clipboard.writeText(\'https://statshot.io\')'
-                        '.then(() => this.textContent=\'✅ Copied!\')" '
-                        'style="background:#e56020; color:white; border:none; '
-                        'padding:0.45rem 1rem; border-radius:0.4rem; cursor:pointer; '
-                        'font-size:0.875rem; margin-top:3px;">🔗 Copy Link</button>',
-                        unsafe_allow_html=True,
+                    fb_url = f"https://www.facebook.com/sharer/sharer.php?u={quote(share_url)}"
+                    st.link_button("📘 Facebook", fb_url)
+                with share_cols[3]:
+                    reddit_url = (
+                        f"https://www.reddit.com/submit"
+                        f"?url={quote(share_url)}"
+                        f"&title={quote(share_text + ' | StatShot')}"
                     )
+                    st.link_button("🏀 Reddit", reddit_url)
 
                 team_name_a = ABBR_TO_NAME.get(abbr_a, abbr_a or "Unknown")
                 team_name_b = ABBR_TO_NAME.get(abbr_b, abbr_b or "Unknown")
@@ -363,11 +404,11 @@ with tab_compare:
                     f'<p style="font-size:0.85rem; color:#888; margin:0.5rem 0 0.25rem;">'
                     f'<span style="display:inline-block;width:14px;height:14px;background:{color_a_hex};'
                     f'border:1px solid #ccc;border-radius:3px;vertical-align:middle;margin-right:4px;"></span>'
-                    f'{team_name_a}'
+                    f'{team_name_a} ({abbr_a or "?"}) — {color_pref_a}'
                     f'&nbsp;&nbsp;vs&nbsp;&nbsp;'
                     f'<span style="display:inline-block;width:14px;height:14px;background:{color_b_hex};'
                     f'border:1px solid #ccc;border-radius:3px;vertical-align:middle;margin-right:4px;"></span>'
-                    f'{team_name_b}'
+                    f'{team_name_b} ({abbr_b or "?"}) — {color_pref_b}'
                     f'</p>',
                     unsafe_allow_html=True,
                 )
@@ -378,40 +419,6 @@ with tab_compare:
                 st.warning(str(e))
             except Exception as e:
                 st.error(f"Error: {e}")
-
-# ═══════════════════════════════════════════════════════════════════════════
-# Get in Touch
-# ═══════════════════════════════════════════════════════════════════════════
-st.divider()
-st.markdown(
-    '<h2 style="text-align:center; margin-bottom:0.2rem;">Let\'s Work Together</h2>'
-    '<p style="text-align:center; color:#888; font-size:1rem; margin-top:0;">'
-    'I\'m always open to discussing new opportunities — finance leadership, data projects, or just talking hoops.'
-    '</p>',
-    unsafe_allow_html=True,
-)
-
-col_form_pad_l, col_form, col_form_pad_r = st.columns([1, 2, 1])
-with col_form:
-    with st.form("contact_form", clear_on_submit=True):
-        contact_name = st.text_input("Name")
-        contact_email = st.text_input("Email")
-        contact_msg = st.text_area("Message", height=120)
-        submitted = st.form_submit_button("Send message", type="primary", use_container_width=True)
-        if submitted:
-            if not contact_name or not contact_email or not contact_msg:
-                st.warning("Please fill out all fields.")
-            else:
-                st.success("Thanks for reaching out! I'll get back to you soon.")
-
-    st.markdown(
-        '<p style="text-align:center; font-size:0.9rem; margin-top:0.75rem;">'
-        '<a href="https://alexsmith.finance" style="color:#e56020; text-decoration:none;">alexsmith.finance</a>'
-        '&nbsp;&nbsp;·&nbsp;&nbsp;'
-        '<a href="https://www.linkedin.com/in/alexwesleysmith/" style="color:#e56020; text-decoration:none;">LinkedIn</a>'
-        '</p>',
-        unsafe_allow_html=True,
-    )
 
 # ═══════════════════════════════════════════════════════════════════════════
 # HIDDEN TABS — set SHOW_ALL_TABS = True when ready to launch
