@@ -284,6 +284,8 @@ url_player_a = qp.get("a", "")
 url_season_a = qp.get("sa", "")
 url_player_b = qp.get("b", "")
 url_season_b = qp.get("sb", "")
+url_color_a = qp.get("ca", "")   # "alt" → Alternate, anything else → Primary
+url_color_b = qp.get("cb", "")
 auto_generate = all([url_player_a, url_season_a, url_player_b, url_season_b])
 
 with tab_compare:
@@ -310,9 +312,11 @@ with tab_compare:
 
     col_color_a, col_color_b = st.columns(2)
     with col_color_a:
-        color_pref_a = st.radio("Player A color", ["Primary", "Alternate"], index=0, key="color_pref_a", horizontal=True)
+        ca_idx = 1 if url_color_a == "alt" else 0
+        color_pref_a = st.radio("Player A color", ["Primary", "Alternate"], index=ca_idx, key="color_pref_a", horizontal=True)
     with col_color_b:
-        color_pref_b = st.radio("Player B color", ["Primary", "Alternate"], index=0, key="color_pref_b", horizontal=True)
+        cb_idx = 1 if url_color_b == "alt" else 0
+        color_pref_b = st.radio("Player B color", ["Primary", "Alternate"], index=cb_idx, key="color_pref_b", horizontal=True)
 
     run_now = st.button("Generate Comparison", type="primary", key="btn_cmp") or auto_generate
 
@@ -363,11 +367,14 @@ with tab_compare:
                 fig.savefig(buf, format="png", dpi=180, facecolor="white")
                 buf.seek(0)
 
+                ca_param = "alt" if color_pref_a == "Alternate" else "pri"
+                cb_param = "alt" if color_pref_b == "Alternate" else "pri"
                 share_url = (
                     f"https://statshot.io/?a={quote(cmp_player_a)}"
                     f"&sa={quote(cmp_season_a)}"
                     f"&b={quote(cmp_player_b)}"
                     f"&sb={quote(cmp_season_b)}"
+                    f"&ca={ca_param}&cb={cb_param}"
                 )
                 share_text = f"{cmp_player_a} vs {cmp_player_b} — who shoots better?"
 
