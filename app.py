@@ -553,13 +553,6 @@ with tab_compare:
                 season_a_safe = safe(cmp_season_a)
                 season_b_safe = safe(cmp_season_b)
                 file_name = f"{name_a}_{season_a_safe}_vs_{name_b}_{season_b_safe}.png"
-                fig.text(
-                    0.98, 0.02, "statshot.io",
-                    ha="right", va="bottom",
-                    fontsize=11, color="#e56020", alpha=0.6,
-                    fontweight="bold", fontstyle="italic",
-                    transform=fig.transFigure,
-                )
                 buf = BytesIO()
                 fig.savefig(buf, format="png", dpi=180, facecolor="white")
                 buf.seek(0)

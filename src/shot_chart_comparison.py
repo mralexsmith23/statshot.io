@@ -555,6 +555,10 @@ def build_comparison(
 
     _draw_court(ax, color="white", lw=1.8, alpha=0.65, zorder=10)
 
+    ax.text(COURT_W - 1, BASELINE_Y + 0.8, "statshot.io",
+            ha="right", va="bottom", fontsize=13, color="white",
+            alpha=0.4, fontweight="bold", fontstyle="italic", zorder=15)
+
     # --- Legend bar ---
     # court bottom = court_top - court_h ≈ 0.120
     leg_y = court_top - court_h - 0.030
@@ -592,8 +596,10 @@ def build_comparison(
     for xp, label in ticks:
         fig.text(xp, leg_y - 0.018, label, ha="center", va="center", color="#999999", **_fp(10, "regular"))
 
-    fig.text(0.50, leg_y - 0.038, "Source: NBA Stats API",
-             ha="center", va="center", color="#bbbbbb", **_fp(9, "regular"))
+    fig.text(0.50, leg_y - 0.038, "Source: NBA Stats API  ·  ",
+             ha="right", va="center", color="#bbbbbb", **_fp(9, "regular"))
+    fig.text(0.50, leg_y - 0.038, "statshot.io",
+             ha="left", va="center", color="#e56020", **_fp(9, "semibold"))
 
     if save:
         ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
