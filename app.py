@@ -230,18 +230,10 @@ def _team_abbr_from_cache(player_id: int, season: str) -> str | None:
 # Cached data loaders
 # ---------------------------------------------------------------------------
 @st.cache_data(show_spinner=False)
-def get_cached_player_names() -> list[str]:
-    """Only return players who have at least one season of cached shot data."""
-    names = sorted(
-        PLAYER_ID_TO_NAME[pid]
-        for pid in CACHE_INDEX
-        if pid in PLAYER_ID_TO_NAME
-    )
-    if names:
-        return names
-    return sorted(
-        p["full_name"] for p in players.get_players() if p["is_active"]
-    )
+def get_all_player_names() -> list[str]:
+    """Return every player in the NBA database (search finds anyone, data
+    layer handles cache vs. API automatically)."""
+    return sorted(p["full_name"] for p in players.get_players())
 
 
 _ALL_NAMES: list[str] = []
@@ -255,10 +247,10 @@ def _strip_accents(s: str) -> str:
 
 
 def _search_players(query: str) -> list[str]:
-    """Accent- and case-insensitive search for cached player names."""
+    """Accent- and case-insensitive player search across all NBA players."""
     global _ALL_NAMES
     if not _ALL_NAMES:
-        _ALL_NAMES = get_cached_player_names()
+        _ALL_NAMES = get_all_player_names()
     if not query:
         return _ALL_NAMES[:20]
     q = _strip_accents(query).lower()
@@ -474,7 +466,7 @@ auto_generate = all([url_player_a, url_season_a, url_player_b, url_season_b])
 
 with tab_compare:
     st.subheader("Head-to-Head FG% Comparison")
-    st.caption("Smoothed heatmap colored by the player who shoots better in each zone, using their team colors")
+    st.caption("Smoothed heatmap colored by the player who shoots better in each zone, using their team colors  ·  Shot location data available from 1996-97 onward")
 
     col_a, col_szn_a = st.columns([3, 2])
     with col_a:
